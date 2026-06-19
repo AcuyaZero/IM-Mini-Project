@@ -13,8 +13,8 @@ namespace IM_Mini_Project
 {
     public partial class Form1 : Form
     {
-        // Connection string - UPDATE WITH YOUR CREDENTIALS
-        private string connectionString = "Server=localhost;Database=hospital_db;Uid=root;Pwd=1234;";
+        // SINGLE INSTANCE OF DATABASE HELPER
+        private Database db = new Database();
         private string selectedPatientId = "";
 
         public Form1()
@@ -375,130 +375,79 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // LOAD DATA METHODS
+        // LOAD DATA METHODS (USING DATABASEHELPER)
         // =============================================
 
         private void LoadPatients()
         {
-            try
+            DataTable dt = db.GetAllPatients();
+            if (dt != null)
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
+                dataGridView1.Rows.Clear();
+
+                foreach (DataRow row in dt.Rows)
                 {
-                    conn.Open();
-                    string query = @"SELECT 
-                                    patient_id AS 'PatientID',
-                                    CONCAT(first_name, ' ', last_name) AS 'Name',
-                                    gender AS 'Gender'
-                                    FROM patient 
-                                    ORDER BY patient_id";
-
-                    MySqlDataAdapter adapter = new MySqlDataAdapter(query, conn);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-
-                    dataGridView1.Rows.Clear();
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        dataGridView1.Rows.Add(row["PatientID"].ToString(), row["Name"].ToString(), row["Gender"].ToString());
-                    }
-
-                    dataGridView1.AutoResizeColumns();
-                    ResizeDataGridView();
+                    dataGridView1.Rows.Add(row["PatientID"].ToString(), row["Name"].ToString(), row["Gender"].ToString());
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading patients: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                dataGridView1.AutoResizeColumns();
+                ResizeDataGridView();
             }
         }
 
         private void LoadPatientDetails(string patientId)
         {
-            try
+            var reader = db.GetPatientDetails(patientId);
+            if (reader != null)
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
+                if (reader.Read())
                 {
-                    conn.Open();
-                    string query = "SELECT * FROM patient WHERE patient_id = @id";
-                    MySqlCommand cmd = new MySqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@id", patientId);
-
-                    MySqlDataReader reader = cmd.ExecuteReader();
-                    if (reader.Read())
-                    {
-                        textBox3.Text = reader["first_name"].ToString();
-                        textBox3.ForeColor = Color.Black;
-                        textBox4.Text = reader["last_name"].ToString();
-                        textBox4.ForeColor = Color.Black;
-                        if (reader["date_of_birth"] != DBNull.Value)
-                            dateTimePicker1.Value = Convert.ToDateTime(reader["date_of_birth"]);
-                        textBox2.Text = reader["email"].ToString();
-                        textBox2.ForeColor = Color.Black;
-                        textBox1.Text = reader["contact_no"].ToString();
-                        textBox1.ForeColor = Color.Black;
-                        textBox5.Text = reader["address"].ToString();
-                        textBox5.ForeColor = Color.Black;
-                        if (reader["gender"] != DBNull.Value)
-                            comboBox1.SelectedItem = reader["gender"].ToString();
-                    }
-                    reader.Close();
+                    textBox3.Text = reader["first_name"].ToString();
+                    textBox3.ForeColor = Color.Black;
+                    textBox4.Text = reader["last_name"].ToString();
+                    textBox4.ForeColor = Color.Black;
+                    if (reader["date_of_birth"] != DBNull.Value)
+                        dateTimePicker1.Value = Convert.ToDateTime(reader["date_of_birth"]);
+                    textBox2.Text = reader["email"].ToString();
+                    textBox2.ForeColor = Color.Black;
+                    textBox1.Text = reader["contact_no"].ToString();
+                    textBox1.ForeColor = Color.Black;
+                    textBox5.Text = reader["address"].ToString();
+                    textBox5.ForeColor = Color.Black;
+                    if (reader["gender"] != DBNull.Value)
+                        comboBox1.SelectedItem = reader["gender"].ToString();
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading patient details: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                reader.Close();
             }
         }
 
         private void SearchPatientById(string patientId)
         {
-            try
+            DataTable dt = db.GetPatientById(patientId);
+            if (dt != null)
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
+                dataGridView1.Rows.Clear();
+
+                if (dt.Rows.Count > 0)
                 {
-                    conn.Open();
-                    string query = @"SELECT 
-                                    patient_id AS 'PatientID',
-                                    CONCAT(first_name, ' ', last_name) AS 'Name',
-                                    gender AS 'Gender'
-                                    FROM patient 
-                                    WHERE patient_id = @id";
-
-                    MySqlCommand cmd = new MySqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@id", patientId);
-
-                    MySqlDataAdapter adapter = new MySqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-
-                    dataGridView1.Rows.Clear();
-
-                    if (dt.Rows.Count > 0)
+                    foreach (DataRow row in dt.Rows)
                     {
-                        foreach (DataRow row in dt.Rows)
-                        {
-                            dataGridView1.Rows.Add(row["PatientID"].ToString(), row["Name"].ToString(), row["Gender"].ToString());
-                        }
-                        LoadPatientDetails(patientId);
+                        dataGridView1.Rows.Add(row["PatientID"].ToString(), row["Name"].ToString(), row["Gender"].ToString());
                     }
-                    else
-                    {
-                        MessageBox.Show("Patient ID not found.", "Search Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        LoadPatients();
-                    }
-
-                    ResizeDataGridView();
+                    LoadPatientDetails(patientId);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error searching patient: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                else
+                {
+                    MessageBox.Show("Patient ID not found.", "Search Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadPatients();
+                }
+
+                ResizeDataGridView();
             }
         }
 
         // =============================================
-        // CRUD OPERATIONS
+        // CRUD OPERATIONS (USING DATABASEHELPER)
         // =============================================
 
         // CREATE - Add Patient
@@ -507,50 +456,27 @@ namespace IM_Mini_Project
             if (!ValidatePatientFields())
                 return;
 
-            try
+            string firstName = GetTextBoxValue(textBox3);
+            string lastName = GetTextBoxValue(textBox4);
+            string email = GetTextBoxValue(textBox2);
+            string phone = GetTextBoxValue(textBox1);
+            string address = GetTextBoxValue(textBox5);
+            string gender = comboBox1.SelectedItem.ToString();
+            DateTime dob = dateTimePicker1.Value.Date;
+
+            // Check if email already exists
+            if (db.EmailExists(email))
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    // Check if email already exists
-                    string checkQuery = "SELECT COUNT(*) FROM patient WHERE email = @email";
-                    MySqlCommand checkCmd = new MySqlCommand(checkQuery, conn);
-                    checkCmd.Parameters.AddWithValue("@email", GetTextBoxValue(textBox2));
-                    int emailExists = Convert.ToInt32(checkCmd.ExecuteScalar());
-
-                    if (emailExists > 0)
-                    {
-                        MessageBox.Show("Email already exists. Please use a different email.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-
-                    string query = @"INSERT INTO patient (first_name, last_name, date_of_birth, email, contact_no, address, gender) 
-                                    VALUES (@firstName, @lastName, @dob, @email, @phone, @address, @gender)";
-
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@firstName", GetTextBoxValue(textBox3));
-                        cmd.Parameters.AddWithValue("@lastName", GetTextBoxValue(textBox4));
-                        cmd.Parameters.AddWithValue("@dob", dateTimePicker1.Value.Date);
-                        cmd.Parameters.AddWithValue("@email", GetTextBoxValue(textBox2));
-                        cmd.Parameters.AddWithValue("@phone", GetTextBoxValue(textBox1));
-                        cmd.Parameters.AddWithValue("@address", GetTextBoxValue(textBox5));
-                        cmd.Parameters.AddWithValue("@gender", comboBox1.SelectedItem.ToString());
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
-                        {
-                            MessageBox.Show("Patient added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            LoadPatients();
-                            ClearFields();
-                        }
-                    }
-                }
+                MessageBox.Show("Email already exists. Please use a different email.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
-            catch (Exception ex)
+
+            int result = db.AddPatient(firstName, lastName, dob, email, phone, address, gender);
+            if (result > 0)
             {
-                MessageBox.Show("Error adding patient: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Patient added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadPatients();
+                ClearFields();
             }
         }
 
@@ -566,59 +492,27 @@ namespace IM_Mini_Project
             if (!ValidatePatientFields())
                 return;
 
-            try
+            string firstName = GetTextBoxValue(textBox3);
+            string lastName = GetTextBoxValue(textBox4);
+            string email = GetTextBoxValue(textBox2);
+            string phone = GetTextBoxValue(textBox1);
+            string address = GetTextBoxValue(textBox5);
+            string gender = comboBox1.SelectedItem.ToString();
+            DateTime dob = dateTimePicker1.Value.Date;
+
+            // Check if email exists for another patient
+            if (db.EmailExists(email, selectedPatientId))
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    // Check if email exists for another patient
-                    string checkQuery = "SELECT COUNT(*) FROM patient WHERE email = @email AND patient_id != @id";
-                    MySqlCommand checkCmd = new MySqlCommand(checkQuery, conn);
-                    checkCmd.Parameters.AddWithValue("@email", GetTextBoxValue(textBox2));
-                    checkCmd.Parameters.AddWithValue("@id", selectedPatientId);
-                    int emailExists = Convert.ToInt32(checkCmd.ExecuteScalar());
-
-                    if (emailExists > 0)
-                    {
-                        MessageBox.Show("Email already exists for another patient.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-
-                    string query = @"UPDATE patient SET 
-                                    first_name = @firstName,
-                                    last_name = @lastName,
-                                    date_of_birth = @dob,
-                                    email = @email,
-                                    contact_no = @phone,
-                                    address = @address,
-                                    gender = @gender
-                                    WHERE patient_id = @patientId";
-
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@patientId", selectedPatientId);
-                        cmd.Parameters.AddWithValue("@firstName", GetTextBoxValue(textBox3));
-                        cmd.Parameters.AddWithValue("@lastName", GetTextBoxValue(textBox4));
-                        cmd.Parameters.AddWithValue("@dob", dateTimePicker1.Value.Date);
-                        cmd.Parameters.AddWithValue("@email", GetTextBoxValue(textBox2));
-                        cmd.Parameters.AddWithValue("@phone", GetTextBoxValue(textBox1));
-                        cmd.Parameters.AddWithValue("@address", GetTextBoxValue(textBox5));
-                        cmd.Parameters.AddWithValue("@gender", comboBox1.SelectedItem.ToString());
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
-                        {
-                            MessageBox.Show("Patient updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            LoadPatients();
-                            ClearFields();
-                        }
-                    }
-                }
+                MessageBox.Show("Email already exists for another patient.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
-            catch (Exception ex)
+
+            int result = db.UpdatePatient(selectedPatientId, firstName, lastName, dob, email, phone, address, gender);
+            if (result > 0)
             {
-                MessageBox.Show("Error updating patient: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Patient updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadPatients();
+                ClearFields();
             }
         }
 
@@ -646,42 +540,12 @@ namespace IM_Mini_Project
 
             if (result == DialogResult.Yes)
             {
-                try
+                int rowsAffected = db.DeletePatient(selectedPatientId);
+                if (rowsAffected > 0)
                 {
-                    using (MySqlConnection conn = new MySqlConnection(connectionString))
-                    {
-                        conn.Open();
-
-                        // Check if patient exists
-                        string checkQuery = "SELECT COUNT(*) FROM patient WHERE patient_id = @id";
-                        MySqlCommand checkCmd = new MySqlCommand(checkQuery, conn);
-                        checkCmd.Parameters.AddWithValue("@id", selectedPatientId);
-                        int exists = Convert.ToInt32(checkCmd.ExecuteScalar());
-
-                        if (exists == 0)
-                        {
-                            MessageBox.Show("Patient not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        string query = "DELETE FROM patient WHERE patient_id = @patientId";
-                        using (MySqlCommand cmd = new MySqlCommand(query, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@patientId", selectedPatientId);
-                            int rowsAffected = cmd.ExecuteNonQuery();
-
-                            if (rowsAffected > 0)
-                            {
-                                MessageBox.Show("Patient deleted successfully!\n\nAudit log has been updated.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                LoadPatients();
-                                ClearFields();
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error deleting patient: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Patient deleted successfully!\n\nAudit log has been updated.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadPatients();
+                    ClearFields();
                 }
             }
         }

@@ -111,6 +111,7 @@
     <Compile Include="BillingForm.Designer.cs">
       <DependentUpon>BillingForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Database.cs" />
     <Compile Include="DoctorForm.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -12,8 +12,8 @@ namespace IM_Mini_Project
 {
     public partial class DoctorForm : Form
     {
-        // Connection string - UPDATE WITH YOUR CREDENTIALS
-        private string connectionString = "Server=localhost;Database=hospital_db;Uid=root;Pwd=1234;";
+        // SINGLE INSTANCE OF DATABASE HELPER
+        private Database db = new Database();
         private string selectedDoctorId = "";
 
         public DoctorForm()
@@ -443,37 +443,27 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // LOAD DATA METHODS
+        // LOAD DATA METHODS (USING DATABASEHELPER)
         // =============================================
 
         private void LoadDepartments()
         {
-            try
+            DataTable dt = db.GetAllDepartments();
+            if (dt != null)
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
-                {
-                    conn.Open();
-                    string query = "SELECT department_id, department_name FROM department ORDER BY department_name";
-                    MySqlDataAdapter adapter = new MySqlDataAdapter(query, conn);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
+                // Add a default "Select Department" option
+                DataRow defaultRow = dt.NewRow();
+                defaultRow["department_id"] = DBNull.Value;
+                defaultRow["department_name"] = "Select Department";
+                dt.Rows.InsertAt(defaultRow, 0);
 
-                    // Add a default "Select Department" option
-                    DataRow defaultRow = dt.NewRow();
-                    defaultRow["department_id"] = DBNull.Value;
-                    defaultRow["department_name"] = "Select Department";
-                    dt.Rows.InsertAt(defaultRow, 0);
-
-                    comboBox1.DataSource = dt;
-                    comboBox1.DisplayMember = "department_name";
-                    comboBox1.ValueMember = "department_id";
-                    comboBox1.SelectedIndex = 0;
-                }
+                comboBox1.DataSource = dt;
+                comboBox1.DisplayMember = "department_name";
+                comboBox1.ValueMember = "department_id";
+                comboBox1.SelectedIndex = 0;
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show("Error loading departments: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-
                 // Fallback: Add some default departments if database doesn't have any
                 comboBox1.Items.Clear();
                 comboBox1.Items.Add("Select Department");
@@ -493,133 +483,77 @@ namespace IM_Mini_Project
 
         private void LoadDoctors()
         {
-            try
+            DataTable dt = db.GetAllDoctors();
+            if (dt != null)
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
+                dataGridView1.Rows.Clear();
+
+                foreach (DataRow row in dt.Rows)
                 {
-                    conn.Open();
-                    string query = @"SELECT 
-                                    doctor_id AS 'DoctorID',
-                                    CONCAT(first_name, ' ', last_name) AS 'Name',
-                                    d.department_name AS 'Department'
-                                    FROM doctor doc
-                                    LEFT JOIN department d ON doc.department_id = d.department_id
-                                    ORDER BY doctor_id";
-
-                    MySqlDataAdapter adapter = new MySqlDataAdapter(query, conn);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-
-                    dataGridView1.Rows.Clear();
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        dataGridView1.Rows.Add(row["DoctorID"].ToString(), row["Name"].ToString(), row["Department"].ToString());
-                    }
-
-                    dataGridView1.AutoResizeColumns();
-                    ResizeDataGridView();
+                    dataGridView1.Rows.Add(row["DoctorID"].ToString(), row["Name"].ToString(), row["Department"].ToString());
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading doctors: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                dataGridView1.AutoResizeColumns();
+                ResizeDataGridView();
             }
         }
 
         private void LoadDoctorDetails(string doctorId)
         {
-            try
+            var reader = db.GetDoctorDetails(doctorId);
+            if (reader != null)
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
+                if (reader.Read())
                 {
-                    conn.Open();
-                    string query = @"SELECT doc.*, d.department_name 
-                                    FROM doctor doc
-                                    LEFT JOIN department d ON doc.department_id = d.department_id
-                                    WHERE doc.doctor_id = @id";
-                    MySqlCommand cmd = new MySqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@id", doctorId);
+                    textBox3.Text = reader["first_name"].ToString();
+                    textBox3.ForeColor = Color.Black;
+                    textBox4.Text = reader["last_name"].ToString();
+                    textBox4.ForeColor = Color.Black;
+                    textBox7.Text = reader["specialization"].ToString();
+                    textBox7.ForeColor = Color.Black;
+                    textBox8.Text = reader["license_number"].ToString();
+                    textBox8.ForeColor = Color.Black;
+                    textBox2.Text = reader["email"].ToString();
+                    textBox2.ForeColor = Color.Black;
+                    textBox1.Text = reader["contact_number"].ToString();
+                    textBox1.ForeColor = Color.Black;
 
-                    MySqlDataReader reader = cmd.ExecuteReader();
-                    if (reader.Read())
-                    {
-                        textBox3.Text = reader["first_name"].ToString();
-                        textBox3.ForeColor = Color.Black;
-                        textBox4.Text = reader["last_name"].ToString();
-                        textBox4.ForeColor = Color.Black;
-                        textBox7.Text = reader["specialization"].ToString();
-                        textBox7.ForeColor = Color.Black;
-                        textBox8.Text = reader["license_number"].ToString();
-                        textBox8.ForeColor = Color.Black;
-                        textBox2.Text = reader["email"].ToString();
-                        textBox2.ForeColor = Color.Black;
-                        textBox1.Text = reader["contact_number"].ToString();
-                        textBox1.ForeColor = Color.Black;
-
-                        if (reader["department_id"] != DBNull.Value)
-                            comboBox1.SelectedValue = reader["department_id"];
-                        else
-                            comboBox1.SelectedIndex = 0;
-                    }
-                    reader.Close();
+                    if (reader["department_id"] != DBNull.Value)
+                        comboBox1.SelectedValue = reader["department_id"];
+                    else
+                        comboBox1.SelectedIndex = 0;
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading doctor details: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                reader.Close();
             }
         }
 
         private void SearchDoctorById(string doctorId)
         {
-            try
+            DataTable dt = db.GetDoctorById(doctorId);
+            if (dt != null)
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
+                dataGridView1.Rows.Clear();
+
+                if (dt.Rows.Count > 0)
                 {
-                    conn.Open();
-                    string query = @"SELECT 
-                                    doctor_id AS 'DoctorID',
-                                    CONCAT(first_name, ' ', last_name) AS 'Name',
-                                    d.department_name AS 'Department'
-                                    FROM doctor doc
-                                    LEFT JOIN department d ON doc.department_id = d.department_id
-                                    WHERE doctor_id = @id";
-
-                    MySqlCommand cmd = new MySqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@id", doctorId);
-
-                    MySqlDataAdapter adapter = new MySqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-
-                    dataGridView1.Rows.Clear();
-
-                    if (dt.Rows.Count > 0)
+                    foreach (DataRow row in dt.Rows)
                     {
-                        foreach (DataRow row in dt.Rows)
-                        {
-                            dataGridView1.Rows.Add(row["DoctorID"].ToString(), row["Name"].ToString(), row["Department"].ToString());
-                        }
-                        LoadDoctorDetails(doctorId);
+                        dataGridView1.Rows.Add(row["DoctorID"].ToString(), row["Name"].ToString(), row["Department"].ToString());
                     }
-                    else
-                    {
-                        MessageBox.Show("Doctor ID not found.", "Search Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        LoadDoctors();
-                    }
-
-                    ResizeDataGridView();
+                    LoadDoctorDetails(doctorId);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error searching doctor: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                else
+                {
+                    MessageBox.Show("Doctor ID not found.", "Search Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadDoctors();
+                }
+
+                ResizeDataGridView();
             }
         }
 
         // =============================================
-        // CRUD OPERATIONS - ADD
+        // CRUD OPERATIONS (USING DATABASEHELPER)
         // =============================================
 
         private void btnAdd_Click(object sender, EventArgs e)
@@ -627,66 +561,36 @@ namespace IM_Mini_Project
             if (!ValidateDoctorFields())
                 return;
 
-            try
+            string firstName = GetTextBoxValue(textBox3);
+            string lastName = GetTextBoxValue(textBox4);
+            string specialization = GetTextBoxValue(textBox7);
+            string licenseNumber = GetLicenseNumber();
+            string email = GetTextBoxValue(textBox2);
+            string phone = GetTextBoxValue(textBox1);
+            object departmentId = comboBox1.SelectedValue;
+
+            // Check if license already exists
+            if (db.LicenseExists(licenseNumber))
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    string checkLicenseQuery = "SELECT COUNT(*) FROM doctor WHERE license_number = @license";
-                    MySqlCommand checkLicenseCmd = new MySqlCommand(checkLicenseQuery, conn);
-                    checkLicenseCmd.Parameters.AddWithValue("@license", GetLicenseNumber());
-                    int licenseExists = Convert.ToInt32(checkLicenseCmd.ExecuteScalar());
-
-                    if (licenseExists > 0)
-                    {
-                        MessageBox.Show("License number already exists. Please use a different license number.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-
-                    string checkEmailQuery = "SELECT COUNT(*) FROM doctor WHERE email = @email";
-                    MySqlCommand checkEmailCmd = new MySqlCommand(checkEmailQuery, conn);
-                    checkEmailCmd.Parameters.AddWithValue("@email", GetTextBoxValue(textBox2));
-                    int emailExists = Convert.ToInt32(checkEmailCmd.ExecuteScalar());
-
-                    if (emailExists > 0)
-                    {
-                        MessageBox.Show("Email already exists. Please use a different email.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-
-                    string query = @"INSERT INTO doctor (first_name, last_name, specialization, license_number, contact_number, email, department_id) 
-                                    VALUES (@firstName, @lastName, @specialization, @license, @phone, @email, @department)";
-
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@firstName", GetTextBoxValue(textBox3));
-                        cmd.Parameters.AddWithValue("@lastName", GetTextBoxValue(textBox4));
-                        cmd.Parameters.AddWithValue("@specialization", GetTextBoxValue(textBox7));
-                        cmd.Parameters.AddWithValue("@license", GetLicenseNumber());
-                        cmd.Parameters.AddWithValue("@phone", GetTextBoxValue(textBox1));
-                        cmd.Parameters.AddWithValue("@email", GetTextBoxValue(textBox2));
-                        cmd.Parameters.AddWithValue("@department", comboBox1.SelectedValue);
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
-                        {
-                            MessageBox.Show("Doctor added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            LoadDoctors();
-                            ClearFields();
-                        }
-                    }
-                }
+                MessageBox.Show("License number already exists. Please use a different license number.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
-            catch (Exception ex)
+
+            // Check if email already exists
+            if (db.DoctorEmailExists(email))
             {
-                MessageBox.Show("Error adding doctor: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Email already exists. Please use a different email.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int result = db.AddDoctor(firstName, lastName, specialization, licenseNumber, phone, email, departmentId);
+            if (result > 0)
+            {
+                MessageBox.Show("Doctor added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadDoctors();
+                ClearFields();
             }
         }
-
-        // =============================================
-        // CRUD OPERATIONS - UPDATE
-        // =============================================
 
         private void btnUpdate_Click(object sender, EventArgs e)
         {
@@ -699,76 +603,36 @@ namespace IM_Mini_Project
             if (!ValidateDoctorFields())
                 return;
 
-            try
+            string firstName = GetTextBoxValue(textBox3);
+            string lastName = GetTextBoxValue(textBox4);
+            string specialization = GetTextBoxValue(textBox7);
+            string licenseNumber = GetLicenseNumber();
+            string email = GetTextBoxValue(textBox2);
+            string phone = GetTextBoxValue(textBox1);
+            object departmentId = comboBox1.SelectedValue;
+
+            // Check if license exists for another doctor
+            if (db.LicenseExists(licenseNumber, selectedDoctorId))
             {
-                using (MySqlConnection conn = new MySqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    string checkLicenseQuery = "SELECT COUNT(*) FROM doctor WHERE license_number = @license AND doctor_id != @id";
-                    MySqlCommand checkLicenseCmd = new MySqlCommand(checkLicenseQuery, conn);
-                    checkLicenseCmd.Parameters.AddWithValue("@license", GetLicenseNumber());
-                    checkLicenseCmd.Parameters.AddWithValue("@id", selectedDoctorId);
-                    int licenseExists = Convert.ToInt32(checkLicenseCmd.ExecuteScalar());
-
-                    if (licenseExists > 0)
-                    {
-                        MessageBox.Show("License number already exists for another doctor.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-
-                    string checkEmailQuery = "SELECT COUNT(*) FROM doctor WHERE email = @email AND doctor_id != @id";
-                    MySqlCommand checkEmailCmd = new MySqlCommand(checkEmailQuery, conn);
-                    checkEmailCmd.Parameters.AddWithValue("@email", GetTextBoxValue(textBox2));
-                    checkEmailCmd.Parameters.AddWithValue("@id", selectedDoctorId);
-                    int emailExists = Convert.ToInt32(checkEmailCmd.ExecuteScalar());
-
-                    if (emailExists > 0)
-                    {
-                        MessageBox.Show("Email already exists for another doctor.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-
-                    string query = @"UPDATE doctor SET 
-                                    first_name = @firstName,
-                                    last_name = @lastName,
-                                    specialization = @specialization,
-                                    license_number = @license,
-                                    contact_number = @phone,
-                                    email = @email,
-                                    department_id = @department
-                                    WHERE doctor_id = @doctorId";
-
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@doctorId", selectedDoctorId);
-                        cmd.Parameters.AddWithValue("@firstName", GetTextBoxValue(textBox3));
-                        cmd.Parameters.AddWithValue("@lastName", GetTextBoxValue(textBox4));
-                        cmd.Parameters.AddWithValue("@specialization", GetTextBoxValue(textBox7));
-                        cmd.Parameters.AddWithValue("@license", GetLicenseNumber());
-                        cmd.Parameters.AddWithValue("@phone", GetTextBoxValue(textBox1));
-                        cmd.Parameters.AddWithValue("@email", GetTextBoxValue(textBox2));
-                        cmd.Parameters.AddWithValue("@department", comboBox1.SelectedValue);
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
-                        {
-                            MessageBox.Show("Doctor updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            LoadDoctors();
-                            ClearFields();
-                        }
-                    }
-                }
+                MessageBox.Show("License number already exists for another doctor.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
-            catch (Exception ex)
+
+            // Check if email exists for another doctor
+            if (db.DoctorEmailExists(email, selectedDoctorId))
             {
-                MessageBox.Show("Error updating doctor: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Email already exists for another doctor.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int result = db.UpdateDoctor(selectedDoctorId, firstName, lastName, specialization, licenseNumber, phone, email, departmentId);
+            if (result > 0)
+            {
+                MessageBox.Show("Doctor updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadDoctors();
+                ClearFields();
             }
         }
-
-        // =============================================
-        // CRUD OPERATIONS - DELETE
-        // =============================================
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
@@ -792,41 +656,12 @@ namespace IM_Mini_Project
 
             if (result == DialogResult.Yes)
             {
-                try
+                int rowsAffected = db.DeleteDoctor(selectedDoctorId);
+                if (rowsAffected > 0)
                 {
-                    using (MySqlConnection conn = new MySqlConnection(connectionString))
-                    {
-                        conn.Open();
-
-                        string checkQuery = "SELECT COUNT(*) FROM doctor WHERE doctor_id = @id";
-                        MySqlCommand checkCmd = new MySqlCommand(checkQuery, conn);
-                        checkCmd.Parameters.AddWithValue("@id", selectedDoctorId);
-                        int exists = Convert.ToInt32(checkCmd.ExecuteScalar());
-
-                        if (exists == 0)
-                        {
-                            MessageBox.Show("Doctor not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        string query = "DELETE FROM doctor WHERE doctor_id = @doctorId";
-                        using (MySqlCommand cmd = new MySqlCommand(query, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@doctorId", selectedDoctorId);
-                            int rowsAffected = cmd.ExecuteNonQuery();
-
-                            if (rowsAffected > 0)
-                            {
-                                MessageBox.Show("Doctor deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                LoadDoctors();
-                                ClearFields();
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error deleting doctor: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Doctor deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadDoctors();
+                    ClearFields();
                 }
             }
         }
