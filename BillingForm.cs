@@ -380,7 +380,7 @@ namespace IM_Mini_Project
                     label17.Text = string.Format("{0:C}", totalBilled);
                     label18.Text = string.Format("{0:C}", totalCollected);
                     label19.Text = string.Format("{0:C}", totalPending);
-                    label20.Text = string.Format("{0:C}", 0);
+ 
                 }
             }
             catch
