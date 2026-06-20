@@ -23,7 +23,6 @@ namespace IM_Mini_Project
         {
             InitializeComponent();
 
-            // Wire up button click events
             this.btnAdd.Click += new EventHandler(this.btnAdd_Click);
             this.btnUpdate.Click += new EventHandler(this.btnUpdate_Click);
             this.btnDelete.Click += new EventHandler(this.btnDelete_Click);
@@ -31,20 +30,14 @@ namespace IM_Mini_Project
             this.btnClear.Click += new EventHandler(this.btnClear_Click);
         }
 
-        // =============================================
-        // FORM LOAD EVENT
-        // =============================================
-
         private void Appointments_Load(object sender, EventArgs e)
         {
-            // Apply rounded corners to buttons
             ButtonRound(btnAdd, 20);
             ButtonRound(btnUpdate, 20);
             ButtonRound(btnDelete, 20);
             ButtonRound(btnRefresh, 20);
             ButtonRound(btnClear, 20);
 
-            // Setup combo box with correct ENUM values from database
             comboBox1.Items.Clear();
             comboBox1.Items.AddRange(new object[] {
                 "Select Status",
@@ -55,36 +48,22 @@ namespace IM_Mini_Project
             });
             comboBox1.SelectedIndex = 0;
 
-            // Setup DataGridView with original design
             SetupDataGridView();
-
-            // FIRST: Load all data
             LoadPatients();
             LoadDoctors();
             LoadAppointments();
 
-            // SECOND: Setup placeholder texts AFTER loading data
-            SetupPlaceholders();
-
-            // Set default date/time
             dateTimePicker1.Value = DateTime.Now.Date.AddDays(1);
-
-            // Fix: Set time picker to show time only
             dateTimePicker2.Format = DateTimePickerFormat.Time;
             dateTimePicker2.ShowUpDown = true;
             dateTimePicker2.Value = DateTime.Now;
 
-            // FIX: Resize DataGridView to fill the panel
-            this.BeginInvoke(new Action(() => ResizeDataGridView()));
+            SetupPlaceholders();
 
-            // Add resize event to handle form resizing
+            this.BeginInvoke(new Action(() => ResizeDataGridView()));
             this.Resize += Appointments_Resize;
             this.ResizeEnd += Appointments_ResizeEnd;
         }
-
-        // =============================================
-        // RESIZE DATAGRIDVIEW TO FILL PANEL
-        // =============================================
 
         private void ResizeDataGridView()
         {
@@ -114,10 +93,6 @@ namespace IM_Mini_Project
         {
             ResizeDataGridView();
         }
-
-        // =============================================
-        // UI HELPER METHODS
-        // =============================================
 
         private void ButtonRound(Button btn, int radius)
         {
@@ -168,10 +143,8 @@ namespace IM_Mini_Project
             {
                 dataGridView1.Columns[0].HeaderText = "Appointment ID";
                 dataGridView1.Columns[0].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-
                 dataGridView1.Columns[1].HeaderText = "Patient";
                 dataGridView1.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-
                 dataGridView1.Columns[2].HeaderText = "Doctor";
                 dataGridView1.Columns[2].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             }
@@ -182,243 +155,77 @@ namespace IM_Mini_Project
 
         private void SetupPlaceholders()
         {
-            // =============================================
-            // SEARCH APPOINTMENT ID
-            // =============================================
+            // Search Appointment ID
             textBox1.Text = "Search Appointment ID";
             textBox1.ForeColor = Color.DarkGray;
-            textBox1.Enter += (s, e) =>
-            {
-                if (textBox1.Text == "Search Appointment ID")
-                {
-                    textBox1.Text = "";
-                    textBox1.ForeColor = Color.Black;
-                }
-            };
-            textBox1.Leave += (s, e) =>
-            {
-                if (string.IsNullOrEmpty(textBox1.Text))
-                {
-                    textBox1.Text = "Search Appointment ID";
-                    textBox1.ForeColor = Color.DarkGray;
-                }
-            };
+            textBox1.Enter += (s, e) => { if (textBox1.Text == "Search Appointment ID") { textBox1.Text = ""; textBox1.ForeColor = Color.Black; } };
+            textBox1.Leave += (s, e) => { if (string.IsNullOrEmpty(textBox1.Text)) { textBox1.Text = "Search Appointment ID"; textBox1.ForeColor = Color.DarkGray; } };
             textBox1.KeyPress += textBox1_KeyPress;
 
-            // =============================================
-            // PATIENT NAME - FIXED
-            // =============================================
+            // Patient Name
             textBox3.Text = "Enter patient name...";
             textBox3.ForeColor = Color.DarkGray;
-
-            // Set up AutoComplete FIRST
             textBox3.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
             textBox3.AutoCompleteSource = AutoCompleteSource.CustomSource;
-
-            // Then load the auto-complete data
-            LoadPatientAutoComplete();
-
-            textBox3.Enter += (s, e) =>
-            {
-                if (textBox3.Text == "Enter patient name...")
-                {
-                    textBox3.Text = "";
-                    textBox3.ForeColor = Color.Black;
-                }
-            };
-            textBox3.Leave += (s, e) =>
-            {
-                if (string.IsNullOrEmpty(textBox3.Text))
-                {
-                    textBox3.Text = "Enter patient name...";
-                    textBox3.ForeColor = Color.DarkGray;
-                }
-            };
+            textBox3.Enter += (s, e) => { if (textBox3.Text == "Enter patient name...") { textBox3.Text = ""; textBox3.ForeColor = Color.Black; } };
+            textBox3.Leave += (s, e) => { if (string.IsNullOrEmpty(textBox3.Text)) { textBox3.Text = "Enter patient name..."; textBox3.ForeColor = Color.DarkGray; } };
             textBox3.TextChanged += textBox3_TextChanged;
 
-            // =============================================
-            // DOCTOR NAME - FIXED
-            // =============================================
+            // Doctor Name
             textBox4.Text = "Enter doctor name...";
             textBox4.ForeColor = Color.DarkGray;
-
-            // Set up AutoComplete FIRST
             textBox4.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
             textBox4.AutoCompleteSource = AutoCompleteSource.CustomSource;
-
-            // Then load the auto-complete data
-            LoadDoctorAutoComplete();
-
-            textBox4.Enter += (s, e) =>
-            {
-                if (textBox4.Text == "Enter doctor name...")
-                {
-                    textBox4.Text = "";
-                    textBox4.ForeColor = Color.Black;
-                }
-            };
-            textBox4.Leave += (s, e) =>
-            {
-                if (string.IsNullOrEmpty(textBox4.Text))
-                {
-                    textBox4.Text = "Enter doctor name...";
-                    textBox4.ForeColor = Color.DarkGray;
-                }
-            };
+            textBox4.Enter += (s, e) => { if (textBox4.Text == "Enter doctor name...") { textBox4.Text = ""; textBox4.ForeColor = Color.Black; } };
+            textBox4.Leave += (s, e) => { if (string.IsNullOrEmpty(textBox4.Text)) { textBox4.Text = "Enter doctor name..."; textBox4.ForeColor = Color.DarkGray; } };
             textBox4.TextChanged += textBox4_TextChanged;
         }
-
-        // =============================================
-        // LOAD AUTO-COMPLETE DATA
-        // =============================================
-
-        private void LoadPatientAutoComplete()
-        {
-            try
-            {
-                DataTable dt = db.GetAllPatientNames();
-                if (dt != null && dt.Rows.Count > 0)
-                {
-                    AutoCompleteStringCollection autoComplete = new AutoCompleteStringCollection();
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        string patientName = row["patient_name"].ToString();
-                        if (!string.IsNullOrEmpty(patientName))
-                        {
-                            autoComplete.Add(patientName);
-                        }
-                    }
-                    textBox3.AutoCompleteCustomSource = autoComplete;
-                }
-            }
-            catch (Exception ex)
-            {
-                // Silent fail - auto-complete just won't work
-            }
-        }
-
-        private void LoadDoctorAutoComplete()
-        {
-            try
-            {
-                DataTable dt = db.GetAllDoctorNames();
-                if (dt != null && dt.Rows.Count > 0)
-                {
-                    AutoCompleteStringCollection autoComplete = new AutoCompleteStringCollection();
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        string doctorName = row["doctor_name"].ToString();
-                        if (!string.IsNullOrEmpty(doctorName))
-                        {
-                            autoComplete.Add(doctorName);
-                        }
-                    }
-                    textBox4.AutoCompleteCustomSource = autoComplete;
-                }
-            }
-            catch (Exception ex)
-            {
-                // Silent fail - auto-complete just won't work
-            }
-        }
-
-        // =============================================
-        // SEARCH TEXTBOX EVENTS
-        // =============================================
-
-        private void textBox1_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (e.KeyChar == (char)Keys.Enter)
-            {
-                string searchId = GetTextBoxValue(textBox1);
-                if (!string.IsNullOrEmpty(searchId))
-                {
-                    SearchAppointmentById(searchId);
-                }
-                else
-                {
-                    LoadAppointments();
-                }
-                e.Handled = true;
-            }
-        }
-
-        // =============================================
-        // PATIENT TEXTBOX EVENTS
-        // =============================================
 
         private void textBox3_TextChanged(object sender, EventArgs e)
         {
             if (isPatientTextChanging) return;
 
             string searchText = textBox3.Text;
-
             if (searchText == "Enter patient name..." || string.IsNullOrEmpty(searchText))
                 return;
 
-            try
+            DataTable dt = db.GetPatientsForAutoComplete(searchText);
+            if (dt != null)
             {
-                DataTable dt = db.GetPatientsForAutoComplete(searchText);
-                if (dt != null && dt.Rows.Count > 0)
+                AutoCompleteStringCollection autoComplete = new AutoCompleteStringCollection();
+                foreach (DataRow row in dt.Rows)
                 {
-                    AutoCompleteStringCollection autoComplete = new AutoCompleteStringCollection();
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        autoComplete.Add(row["patient_name"].ToString());
-                    }
-                    textBox3.AutoCompleteCustomSource = autoComplete;
+                    autoComplete.Add(row["patient_name"].ToString());
                 }
-            }
-            catch (Exception ex)
-            {
-                // Silent fail
+                textBox3.AutoCompleteCustomSource = autoComplete;
             }
         }
-
-        // =============================================
-        // DOCTOR TEXTBOX EVENTS
-        // =============================================
 
         private void textBox4_TextChanged(object sender, EventArgs e)
         {
             if (isDoctorTextChanging) return;
 
             string searchText = textBox4.Text;
-
             if (searchText == "Enter doctor name..." || string.IsNullOrEmpty(searchText))
                 return;
 
-            try
+            DataTable dt = db.GetDoctorsForAutoComplete(searchText);
+            if (dt != null)
             {
-                DataTable dt = db.GetDoctorsForAutoComplete(searchText);
-                if (dt != null && dt.Rows.Count > 0)
+                AutoCompleteStringCollection autoComplete = new AutoCompleteStringCollection();
+                foreach (DataRow row in dt.Rows)
                 {
-                    AutoCompleteStringCollection autoComplete = new AutoCompleteStringCollection();
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        autoComplete.Add(row["doctor_name"].ToString());
-                    }
-                    textBox4.AutoCompleteCustomSource = autoComplete;
+                    autoComplete.Add(row["doctor_name"].ToString());
                 }
-            }
-            catch (Exception ex)
-            {
-                // Silent fail
+                textBox4.AutoCompleteCustomSource = autoComplete;
             }
         }
 
         private string GetTextBoxValue(TextBox txt)
         {
-            // FIX: Check if it's the placeholder
-            if (txt.Text == "Enter patient name..." ||
-                txt.Text == "Enter doctor name..." ||
-                txt.Text == "Search Appointment ID")
+            if (txt.ForeColor == Color.DarkGray || string.IsNullOrEmpty(txt.Text) ||
+                txt.Text == "Enter patient name..." || txt.Text == "Enter doctor name...")
                 return "";
-
-            // If the text is empty or just whitespace
-            if (string.IsNullOrWhiteSpace(txt.Text))
-                return "";
-
             return txt.Text.Trim();
         }
 
@@ -434,10 +241,6 @@ namespace IM_Mini_Project
             dateTimePicker2.Value = DateTime.Now;
             comboBox1.SelectedIndex = 0;
             selectedAppointmentId = "";
-
-            // Reload auto-complete data
-            LoadPatientAutoComplete();
-            LoadDoctorAutoComplete();
         }
 
         private bool ValidateAppointmentFields()
@@ -477,138 +280,120 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // LOAD DATA METHODS
+        // LOAD DATA METHODS - USING STORED PROCEDURES
         // =============================================
 
         private void LoadPatients()
         {
-            try
+            DataTable dt = db.GetAllPatientNames();
+            if (dt != null)
             {
-                DataTable dt = db.GetAllPatientNames();
-                if (dt != null && dt.Rows.Count > 0)
+                textBox3.Tag = dt;
+
+                AutoCompleteStringCollection autoComplete = new AutoCompleteStringCollection();
+                foreach (DataRow row in dt.Rows)
                 {
-                    textBox3.Tag = dt;
+                    autoComplete.Add(row["patient_name"].ToString());
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading patients: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                textBox3.AutoCompleteCustomSource = autoComplete;
             }
         }
 
         private void LoadDoctors()
         {
-            try
+            DataTable dt = db.GetAllDoctorNames();
+            if (dt != null)
             {
-                DataTable dt = db.GetAllDoctorNames();
-                if (dt != null && dt.Rows.Count > 0)
+                textBox4.Tag = dt;
+
+                AutoCompleteStringCollection autoComplete = new AutoCompleteStringCollection();
+                foreach (DataRow row in dt.Rows)
                 {
-                    textBox4.Tag = dt;
+                    autoComplete.Add(row["doctor_name"].ToString());
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading doctors: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                textBox4.AutoCompleteCustomSource = autoComplete;
             }
         }
 
         private void LoadAppointments()
         {
-            try
+            DataTable dt = db.GetAllAppointments();
+            if (dt != null)
             {
-                DataTable dt = db.GetAllAppointments();
-                if (dt != null)
+                dataGridView1.Rows.Clear();
+
+                foreach (DataRow row in dt.Rows)
                 {
-                    dataGridView1.Rows.Clear();
-
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        dataGridView1.Rows.Add(row["AppointmentID"].ToString(), row["Patient"].ToString(), row["Doctor"].ToString());
-                    }
-
-                    dataGridView1.AutoResizeColumns();
-                    ResizeDataGridView();
+                    dataGridView1.Rows.Add(
+                        row["AppointmentID"].ToString(),
+                        row["Patient"].ToString(),
+                        row["Doctor"].ToString()
+                    );
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading appointments: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                dataGridView1.AutoResizeColumns();
+                ResizeDataGridView();
             }
         }
 
         private void LoadAppointmentDetails(string appointmentId)
         {
-            try
+            var reader = db.GetAppointmentDetails(appointmentId);
+            if (reader != null)
             {
-                var reader = db.GetAppointmentDetails(appointmentId);
-                if (reader != null)
+                if (reader.Read())
                 {
-                    if (reader.Read())
+                    textBox3.Text = reader["patient_name"].ToString();
+                    textBox3.ForeColor = Color.Black;
+                    textBox4.Text = reader["doctor_name"].ToString();
+                    textBox4.ForeColor = Color.Black;
+
+                    if (reader["appointment_date"] != DBNull.Value)
+                        dateTimePicker1.Value = Convert.ToDateTime(reader["appointment_date"]);
+
+                    if (reader["appointment_time"] != DBNull.Value)
                     {
-                        // Set patient name
-                        string patientName = reader["patient_name"] != DBNull.Value ? reader["patient_name"].ToString() : "";
-                        textBox3.Text = patientName;
-                        textBox3.ForeColor = string.IsNullOrEmpty(patientName) ? Color.DarkGray : Color.Black;
-
-                        // Set doctor name
-                        string doctorName = reader["doctor_name"] != DBNull.Value ? reader["doctor_name"].ToString() : "";
-                        textBox4.Text = doctorName;
-                        textBox4.ForeColor = string.IsNullOrEmpty(doctorName) ? Color.DarkGray : Color.Black;
-
-                        if (reader["appointment_date"] != DBNull.Value)
-                            dateTimePicker1.Value = Convert.ToDateTime(reader["appointment_date"]);
-
-                        if (reader["appointment_time"] != DBNull.Value)
-                        {
-                            TimeSpan time = (TimeSpan)reader["appointment_time"];
-                            dateTimePicker2.Value = DateTime.Today.Add(time);
-                        }
-
-                        if (reader["appointment_status"] != DBNull.Value)
-                        {
-                            string status = reader["appointment_status"].ToString();
-                            int index = comboBox1.Items.IndexOf(status);
-                            comboBox1.SelectedIndex = index >= 0 ? index : 0;
-                        }
+                        TimeSpan time = (TimeSpan)reader["appointment_time"];
+                        dateTimePicker2.Value = DateTime.Today.Add(time);
                     }
-                    reader.Close();
+
+                    if (reader["appointment_status"] != DBNull.Value)
+                    {
+                        string status = reader["appointment_status"].ToString();
+                        int index = comboBox1.Items.IndexOf(status);
+                        comboBox1.SelectedIndex = index >= 0 ? index : 0;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading appointment details: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                reader.Close();
             }
         }
 
         private void SearchAppointmentById(string appointmentId)
         {
-            try
+            DataTable dt = db.GetAppointmentById(appointmentId);
+            if (dt != null)
             {
-                DataTable dt = db.GetAppointmentById(appointmentId);
-                if (dt != null)
+                dataGridView1.Rows.Clear();
+
+                if (dt.Rows.Count > 0)
                 {
-                    dataGridView1.Rows.Clear();
-
-                    if (dt.Rows.Count > 0)
+                    foreach (DataRow row in dt.Rows)
                     {
-                        foreach (DataRow row in dt.Rows)
-                        {
-                            dataGridView1.Rows.Add(row["AppointmentID"].ToString(), row["Patient"].ToString(), row["Doctor"].ToString());
-                        }
-                        LoadAppointmentDetails(appointmentId);
+                        dataGridView1.Rows.Add(
+                            row["AppointmentID"].ToString(),
+                            row["Patient"].ToString(),
+                            row["Doctor"].ToString()
+                        );
                     }
-                    else
-                    {
-                        MessageBox.Show("Appointment ID not found.", "Search Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        LoadAppointments();
-                    }
-
-                    ResizeDataGridView();
+                    LoadAppointmentDetails(appointmentId);
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error searching appointment: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                else
+                {
+                    MessageBox.Show("Appointment ID not found.", "Search Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadAppointments();
+                }
+
+                ResizeDataGridView();
             }
         }
 
@@ -623,7 +408,7 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // CRUD OPERATIONS - ADD
+        // CRUD OPERATIONS - USING STORED PROCEDURES
         // =============================================
 
         private void btnAdd_Click(object sender, EventArgs e)
@@ -631,56 +416,39 @@ namespace IM_Mini_Project
             if (!ValidateAppointmentFields())
                 return;
 
-            try
+            string patientName = GetTextBoxValue(textBox3);
+            string doctorName = GetTextBoxValue(textBox4);
+
+            int patientId = GetPatientIdByName(patientName);
+            int doctorId = GetDoctorIdByName(doctorName);
+
+            if (patientId == -1)
             {
-                string patientName = GetTextBoxValue(textBox3);
-                string doctorName = GetTextBoxValue(textBox4);
-
-                int patientId = GetPatientIdByName(patientName);
-                int doctorId = GetDoctorIdByName(doctorName);
-
-                if (patientId == -1)
-                {
-                    MessageBox.Show("Selected patient not found. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                if (doctorId == -1)
-                {
-                    MessageBox.Show("Selected doctor not found. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                if (!db.IsDoctorAvailable(doctorId.ToString(), dateTimePicker1.Value.Date, dateTimePicker2.Value.TimeOfDay))
-                {
-                    MessageBox.Show("Doctor already has an appointment at this time.", "Conflict Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                int result = db.AddAppointment(
-                    patientId.ToString(),
-                    doctorId.ToString(),
-                    dateTimePicker1.Value.Date,
-                    dateTimePicker2.Value.TimeOfDay,
-                    comboBox1.SelectedItem.ToString()
-                );
-
-                if (result > 0)
-                {
-                    MessageBox.Show("Appointment added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    LoadAppointments();
-                    ClearFields();
-                }
+                MessageBox.Show("Selected patient not found. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
-            catch (Exception ex)
+
+            if (doctorId == -1)
             {
-                MessageBox.Show("Error adding appointment: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Selected doctor not found. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            int result = db.AddAppointment(
+                patientId.ToString(),
+                doctorId.ToString(),
+                dateTimePicker1.Value.Date,
+                dateTimePicker2.Value.TimeOfDay,
+                comboBox1.SelectedItem.ToString()
+            );
+
+            if (result > 0)
+            {
+                MessageBox.Show("Appointment added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadAppointments();
+                ClearFields();
             }
         }
-
-        // =============================================
-        // CRUD OPERATIONS - UPDATE
-        // =============================================
 
         private void btnUpdate_Click(object sender, EventArgs e)
         {
@@ -693,57 +461,40 @@ namespace IM_Mini_Project
             if (!ValidateAppointmentFields())
                 return;
 
-            try
+            string patientName = GetTextBoxValue(textBox3);
+            string doctorName = GetTextBoxValue(textBox4);
+
+            int patientId = GetPatientIdByName(patientName);
+            int doctorId = GetDoctorIdByName(doctorName);
+
+            if (patientId == -1)
             {
-                string patientName = GetTextBoxValue(textBox3);
-                string doctorName = GetTextBoxValue(textBox4);
-
-                int patientId = GetPatientIdByName(patientName);
-                int doctorId = GetDoctorIdByName(doctorName);
-
-                if (patientId == -1)
-                {
-                    MessageBox.Show("Selected patient not found. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                if (doctorId == -1)
-                {
-                    MessageBox.Show("Selected doctor not found. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                if (!db.IsDoctorAvailable(doctorId.ToString(), dateTimePicker1.Value.Date, dateTimePicker2.Value.TimeOfDay, selectedAppointmentId))
-                {
-                    MessageBox.Show("Doctor already has an appointment at this time.", "Conflict Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                int result = db.UpdateAppointment(
-                    selectedAppointmentId,
-                    patientId.ToString(),
-                    doctorId.ToString(),
-                    dateTimePicker1.Value.Date,
-                    dateTimePicker2.Value.TimeOfDay,
-                    comboBox1.SelectedItem.ToString()
-                );
-
-                if (result > 0)
-                {
-                    MessageBox.Show("Appointment updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    LoadAppointments();
-                    ClearFields();
-                }
+                MessageBox.Show("Selected patient not found. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
-            catch (Exception ex)
+
+            if (doctorId == -1)
             {
-                MessageBox.Show("Error updating appointment: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Selected doctor not found. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            int result = db.UpdateAppointment(
+                selectedAppointmentId,
+                patientId.ToString(),
+                doctorId.ToString(),
+                dateTimePicker1.Value.Date,
+                dateTimePicker2.Value.TimeOfDay,
+                comboBox1.SelectedItem.ToString()
+            );
+
+            if (result > 0)
+            {
+                MessageBox.Show("Appointment updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadAppointments();
+                ClearFields();
             }
         }
-
-        // =============================================
-        // CRUD OPERATIONS - DELETE
-        // =============================================
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
@@ -763,26 +514,15 @@ namespace IM_Mini_Project
 
             if (result == DialogResult.Yes)
             {
-                try
+                int rowsAffected = db.DeleteAppointment(selectedAppointmentId);
+                if (rowsAffected > 0)
                 {
-                    int rowsAffected = db.DeleteAppointment(selectedAppointmentId);
-                    if (rowsAffected > 0)
-                    {
-                        MessageBox.Show("Appointment deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        LoadAppointments();
-                        ClearFields();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error deleting appointment: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Appointment deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadAppointments();
+                    ClearFields();
                 }
             }
         }
-
-        // =============================================
-        // CRUD OPERATIONS - REFRESH & CLEAR
-        // =============================================
 
         private void btnRefresh_Click(object sender, EventArgs e)
         {
@@ -798,10 +538,6 @@ namespace IM_Mini_Project
             LoadAppointments();
         }
 
-        // =============================================
-        // DATA GRID VIEW EVENTS
-        // =============================================
-
         private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
@@ -815,25 +551,26 @@ namespace IM_Mini_Project
             }
         }
 
-        // =============================================
-        // PANEL PAINT EVENTS (Keep for compatibility)
-        // =============================================
-
-        private void panel6_Paint(object sender, PaintEventArgs e)
+        private void textBox1_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Keep for designer compatibility
+            if (e.KeyChar == (char)Keys.Enter)
+            {
+                string searchId = GetTextBoxValue(textBox1);
+                if (!string.IsNullOrEmpty(searchId))
+                {
+                    SearchAppointmentById(searchId);
+                }
+                else
+                {
+                    LoadAppointments();
+                }
+                e.Handled = true;
+            }
         }
 
-        private void panel1_Paint(object sender, PaintEventArgs e)
-        {
-            // Keep for designer compatibility
-        }
-
-        private void panel2_Paint(object sender, PaintEventArgs e)
-        {
-            // Keep for designer compatibility
-        }
-
+        private void panel6_Paint(object sender, PaintEventArgs e) { }
+        private void panel1_Paint(object sender, PaintEventArgs e) { }
+        private void panel2_Paint(object sender, PaintEventArgs e) { }
         private void Appointments_Shown(object sender, EventArgs e)
         {
             dataGridView1.ClearSelection();

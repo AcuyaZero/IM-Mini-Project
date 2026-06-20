@@ -12,7 +12,7 @@ namespace IM_Mini_Project
 {
     public partial class DoctorForm : Form
     {
-        // SINGLE INSTANCE OF DATABASE HELPER
+        // SINGLE INSTANCE OF DATABASE
         private Database db = new Database();
         private string selectedDoctorId = "";
 
@@ -20,7 +20,6 @@ namespace IM_Mini_Project
         {
             InitializeComponent();
 
-            // Wire up button click events
             this.btnAdd.Click += new EventHandler(this.btnAdd_Click);
             this.btnUpdate.Click += new EventHandler(this.btnUpdate_Click);
             this.btnDelete.Click += new EventHandler(this.btnDelete_Click);
@@ -28,42 +27,23 @@ namespace IM_Mini_Project
             this.btnClear.Click += new EventHandler(this.btnClear_Click);
         }
 
-        // =============================================
-        // FORM LOAD EVENT
-        // =============================================
-
         private void DoctorForm_Load(object sender, EventArgs e)
         {
-            // Apply rounded corners to buttons
             ButtonRound(btnAdd, 20);
             ButtonRound(btnUpdate, 20);
             ButtonRound(btnDelete, 20);
             ButtonRound(btnRefresh, 20);
             ButtonRound(btnClear, 20);
 
-            // Setup placeholder texts
             SetupPlaceholders();
-
-            // Setup DataGridView with original design
             SetupDataGridView();
-
-            // Load departments into combo box
             LoadDepartments();
-
-            // Load data
             LoadDoctors();
 
-            // FIX: Resize DataGridView to fill the panel
             this.BeginInvoke(new Action(() => ResizeDataGridView()));
-
-            // Add resize event to handle form resizing
             this.Resize += DoctorForm_Resize;
             this.ResizeEnd += DoctorForm_ResizeEnd;
         }
-
-        // =============================================
-        // RESIZE DATAGRIDVIEW TO FILL PANEL
-        // =============================================
 
         private void ResizeDataGridView()
         {
@@ -94,10 +74,6 @@ namespace IM_Mini_Project
             ResizeDataGridView();
         }
 
-        // =============================================
-        // UI HELPER METHODS
-        // =============================================
-
         private void ButtonRound(Button btn, int radius)
         {
             GraphicsPath path = new GraphicsPath();
@@ -111,7 +87,6 @@ namespace IM_Mini_Project
 
         private void SetupDataGridView()
         {
-            // Match the original design from Patient form
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.AllowUserToDeleteRows = false;
             dataGridView1.AllowUserToResizeColumns = false;
@@ -124,19 +99,16 @@ namespace IM_Mini_Project
             dataGridView1.MultiSelect = false;
             dataGridView1.ReadOnly = true;
 
-            // Set colors to match original design
             dataGridView1.BackgroundColor = Color.White;
             dataGridView1.GridColor = Color.LightGray;
             dataGridView1.ForeColor = Color.Black;
 
-            // Column header style
             dataGridView1.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(48, 45, 109);
             dataGridView1.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             dataGridView1.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             dataGridView1.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridView1.EnableHeadersVisualStyles = false;
 
-            // Row style
             dataGridView1.DefaultCellStyle.Font = new Font("Segoe UI", 9.75F);
             dataGridView1.DefaultCellStyle.ForeColor = Color.Black;
             dataGridView1.DefaultCellStyle.SelectionBackColor = Color.FromArgb(52, 152, 219);
@@ -144,21 +116,15 @@ namespace IM_Mini_Project
             dataGridView1.DefaultCellStyle.Padding = new Padding(5);
             dataGridView1.RowTemplate.Height = 35;
 
-            // Alternating row colors for better readability
             dataGridView1.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 248, 248);
-
-            // Auto-size columns
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-            // The columns are already defined in designer, set their styles
             if (dataGridView1.Columns.Count > 0)
             {
                 dataGridView1.Columns[0].HeaderText = "Doctor ID";
                 dataGridView1.Columns[0].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-
                 dataGridView1.Columns[1].HeaderText = "Name";
                 dataGridView1.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-
                 dataGridView1.Columns[2].HeaderText = "Department";
                 dataGridView1.Columns[2].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             }
@@ -182,7 +148,7 @@ namespace IM_Mini_Project
             textBox6.KeyPress -= textBox6_KeyPress;
             textBox6.KeyPress += textBox6_KeyPress;
 
-            // First Name (textBox3)
+            // First Name
             if (string.IsNullOrEmpty(textBox3.Text) || textBox3.Text == "e.g. Juan")
             {
                 textBox3.Text = "e.g. Juan";
@@ -193,7 +159,7 @@ namespace IM_Mini_Project
             textBox3.Enter += TextBox_Enter;
             textBox3.Leave += TextBox_Leave;
 
-            // Last Name (textBox4)
+            // Last Name
             if (string.IsNullOrEmpty(textBox4.Text) || textBox4.Text == "e.g. Delacruz")
             {
                 textBox4.Text = "e.g. Delacruz";
@@ -204,7 +170,7 @@ namespace IM_Mini_Project
             textBox4.Enter += TextBox_Enter;
             textBox4.Leave += TextBox_Leave;
 
-            // Specialization (textBox7)
+            // Specialization
             if (string.IsNullOrEmpty(textBox7.Text) || textBox7.Text == "e.g. Cardiology")
             {
                 textBox7.Text = "e.g. Cardiology";
@@ -215,7 +181,7 @@ namespace IM_Mini_Project
             textBox7.Enter += TextBox_Enter;
             textBox7.Leave += TextBox_Leave;
 
-            // License Number (textBox8)
+            // License Number
             if (string.IsNullOrEmpty(textBox8.Text) || textBox8.Text == "e.g. DOC-12345" || textBox8.Text == "e.g. (Insert Doctor ID format)")
             {
                 textBox8.Text = "e.g. DOC-12345";
@@ -226,7 +192,7 @@ namespace IM_Mini_Project
             textBox8.Enter += TextBox_Enter;
             textBox8.Leave += TextBox_Leave;
 
-            // Email (textBox2)
+            // Email
             if (string.IsNullOrEmpty(textBox2.Text) || textBox2.Text == "e.g. doctor@hospital.com")
             {
                 textBox2.Text = "e.g. doctor@hospital.com";
@@ -237,7 +203,7 @@ namespace IM_Mini_Project
             textBox2.Enter += TextBox_Enter;
             textBox2.Leave += TextBox_Leave;
 
-            // Phone (textBox1)
+            // Phone
             if (string.IsNullOrEmpty(textBox1.Text) || textBox1.Text == "09XX-XXX-XXXX")
             {
                 textBox1.Text = "09XX-XXX-XXXX";
@@ -282,14 +248,11 @@ namespace IM_Mini_Project
             }
         }
 
-        // FIXED: GetTextBoxValue - Properly handles all fields including license
         private string GetTextBoxValue(TextBox txt)
         {
-            // If it's a placeholder (gray text), return empty
             if (txt.ForeColor == Color.DarkGray)
                 return "";
 
-            // Check all placeholder texts (even if they somehow changed color)
             if (string.IsNullOrEmpty(txt.Text))
                 return "";
 
@@ -306,12 +269,10 @@ namespace IM_Mini_Project
             return txt.Text.Trim();
         }
 
-        // SPECIAL METHOD FOR LICENSE NUMBER - Always returns the text if it's not a placeholder
         private string GetLicenseNumber()
         {
             string text = textBox8.Text.Trim();
 
-            // If it's a placeholder or empty, return empty
             if (string.IsNullOrEmpty(text) ||
                 text == "e.g. DOC-12345" ||
                 text == "e.g. (Insert Doctor ID format)")
@@ -350,7 +311,6 @@ namespace IM_Mini_Project
             string firstName = GetTextBoxValue(textBox3);
             string lastName = GetTextBoxValue(textBox4);
             string specialization = GetTextBoxValue(textBox7);
-            // Use the special method for license number
             string licenseNumber = GetLicenseNumber();
             string email = GetTextBoxValue(textBox2);
             string phone = GetTextBoxValue(textBox1);
@@ -406,8 +366,7 @@ namespace IM_Mini_Project
 
             if (!IsValidPhoneNumber(phone))
             {
-                MessageBox.Show("Please enter a valid phone number (numbers only, minimum 7 digits).\nExample: 09123456789 or 1234567",
-                    "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please enter a valid phone number (numbers only, minimum 7 digits).", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 textBox1.Focus();
                 textBox1.SelectAll();
                 return false;
@@ -443,15 +402,14 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // LOAD DATA METHODS (USING DATABASEHELPER)
+        // LOAD DATA METHODS - USING STORED PROCEDURES
         // =============================================
 
         private void LoadDepartments()
         {
             DataTable dt = db.GetAllDepartments();
-            if (dt != null)
+            if (dt != null && dt.Rows.Count > 0)
             {
-                // Add a default "Select Department" option
                 DataRow defaultRow = dt.NewRow();
                 defaultRow["department_id"] = DBNull.Value;
                 defaultRow["department_name"] = "Select Department";
@@ -464,7 +422,6 @@ namespace IM_Mini_Project
             }
             else
             {
-                // Fallback: Add some default departments if database doesn't have any
                 comboBox1.Items.Clear();
                 comboBox1.Items.Add("Select Department");
                 comboBox1.Items.Add("Cardiology");
@@ -490,7 +447,11 @@ namespace IM_Mini_Project
 
                 foreach (DataRow row in dt.Rows)
                 {
-                    dataGridView1.Rows.Add(row["DoctorID"].ToString(), row["Name"].ToString(), row["Department"].ToString());
+                    dataGridView1.Rows.Add(
+                        row["DoctorID"].ToString(),
+                        row["Name"].ToString(),
+                        row["Department"].ToString()
+                    );
                 }
 
                 dataGridView1.AutoResizeColumns();
@@ -538,7 +499,11 @@ namespace IM_Mini_Project
                 {
                     foreach (DataRow row in dt.Rows)
                     {
-                        dataGridView1.Rows.Add(row["DoctorID"].ToString(), row["Name"].ToString(), row["Department"].ToString());
+                        dataGridView1.Rows.Add(
+                            row["DoctorID"].ToString(),
+                            row["Name"].ToString(),
+                            row["Department"].ToString()
+                        );
                     }
                     LoadDoctorDetails(doctorId);
                 }
@@ -553,7 +518,7 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // CRUD OPERATIONS (USING DATABASEHELPER)
+        // CRUD OPERATIONS - USING STORED PROCEDURES
         // =============================================
 
         private void btnAdd_Click(object sender, EventArgs e)
@@ -568,20 +533,6 @@ namespace IM_Mini_Project
             string email = GetTextBoxValue(textBox2);
             string phone = GetTextBoxValue(textBox1);
             object departmentId = comboBox1.SelectedValue;
-
-            // Check if license already exists
-            if (db.LicenseExists(licenseNumber))
-            {
-                MessageBox.Show("License number already exists. Please use a different license number.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            // Check if email already exists
-            if (db.DoctorEmailExists(email))
-            {
-                MessageBox.Show("Email already exists. Please use a different email.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
 
             int result = db.AddDoctor(firstName, lastName, specialization, licenseNumber, phone, email, departmentId);
             if (result > 0)
@@ -611,20 +562,6 @@ namespace IM_Mini_Project
             string phone = GetTextBoxValue(textBox1);
             object departmentId = comboBox1.SelectedValue;
 
-            // Check if license exists for another doctor
-            if (db.LicenseExists(licenseNumber, selectedDoctorId))
-            {
-                MessageBox.Show("License number already exists for another doctor.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            // Check if email exists for another doctor
-            if (db.DoctorEmailExists(email, selectedDoctorId))
-            {
-                MessageBox.Show("Email already exists for another doctor.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
             int result = db.UpdateDoctor(selectedDoctorId, firstName, lastName, specialization, licenseNumber, phone, email, departmentId);
             if (result > 0)
             {
@@ -644,11 +581,7 @@ namespace IM_Mini_Project
 
             DialogResult result = MessageBox.Show(
                 "Are you sure you want to delete this doctor?\n\n" +
-                "This will also delete all associated records:\n" +
-                "• Appointments\n" +
-                "• Schedules\n" +
-                "• Medical records\n" +
-                "• Prescriptions\n\n" +
+                "This will also delete all associated records.\n\n" +
                 "This action will be logged in the audit trail.",
                 "Confirm Delete",
                 MessageBoxButtons.YesNo,
@@ -666,10 +599,6 @@ namespace IM_Mini_Project
             }
         }
 
-        // =============================================
-        // CRUD OPERATIONS - REFRESH & CLEAR
-        // =============================================
-
         private void btnRefresh_Click(object sender, EventArgs e)
         {
             LoadDoctors();
@@ -681,10 +610,6 @@ namespace IM_Mini_Project
             ClearFields();
             LoadDoctors();
         }
-
-        // =============================================
-        // DATA GRID VIEW EVENTS
-        // =============================================
 
         private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
@@ -698,10 +623,6 @@ namespace IM_Mini_Project
                 }
             }
         }
-
-        // =============================================
-        // SEARCH - Doctor ID TextBox
-        // =============================================
 
         private void textBox6_KeyPress(object sender, KeyPressEventArgs e)
         {
@@ -720,18 +641,14 @@ namespace IM_Mini_Project
             }
         }
 
-        // =============================================
-        // PANEL PAINT EVENT (Keep for compatibility)
-        // =============================================
-
         private void panel6_Paint(object sender, PaintEventArgs e)
         {
-            // Keep this method for designer compatibility
+            // Keep for designer compatibility
         }
 
         private void textBox2_TextChanged(object sender, EventArgs e)
         {
-            // Keep this method for designer compatibility
+            // Keep for designer compatibility
         }
     }
 }

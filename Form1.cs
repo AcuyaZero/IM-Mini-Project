@@ -13,7 +13,7 @@ namespace IM_Mini_Project
 {
     public partial class Form1 : Form
     {
-        // SINGLE INSTANCE OF DATABASE HELPER
+        // SINGLE INSTANCE OF DATABASE
         private Database db = new Database();
         private string selectedPatientId = "";
 
@@ -22,39 +22,22 @@ namespace IM_Mini_Project
             InitializeComponent();
         }
 
-        // =============================================
-        // FORM LOAD EVENT
-        // =============================================
-
         private void Form1_Load(object sender, EventArgs e)
         {
-            // Apply rounded corners to buttons
             ButtonRound(btnAdd, 20);
             ButtonRound(btnUpdate, 20);
             ButtonRound(btnDelete, 20);
             ButtonRound(btnRefresh, 20);
             ButtonRound(btnClear, 20);
 
-            // Setup placeholder texts
             SetupPlaceholders();
-
-            // Setup DataGridView with original design
             SetupDataGridView();
-
-            // Load data
             LoadPatients();
 
-            // FIX: Resize DataGridView to fill the panel
             this.BeginInvoke(new Action(() => ResizeDataGridView()));
-
-            // Add resize event to handle form resizing
             this.Resize += Form1_Resize;
             this.ResizeEnd += Form1_ResizeEnd;
         }
-
-        // =============================================
-        // RESIZE DATAGRIDVIEW TO FILL PANEL
-        // =============================================
 
         private void ResizeDataGridView()
         {
@@ -85,10 +68,6 @@ namespace IM_Mini_Project
             ResizeDataGridView();
         }
 
-        // =============================================
-        // UI HELPER METHODS
-        // =============================================
-
         private void ButtonRound(Button btn, int radius)
         {
             GraphicsPath path = new GraphicsPath();
@@ -102,7 +81,6 @@ namespace IM_Mini_Project
 
         private void SetupDataGridView()
         {
-            // Match the original design from Doctor and Appointment forms
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.AllowUserToDeleteRows = false;
             dataGridView1.AllowUserToResizeColumns = false;
@@ -115,19 +93,16 @@ namespace IM_Mini_Project
             dataGridView1.MultiSelect = false;
             dataGridView1.ReadOnly = true;
 
-            // Set colors to match original design
             dataGridView1.BackgroundColor = Color.White;
             dataGridView1.GridColor = Color.LightGray;
             dataGridView1.ForeColor = Color.Black;
 
-            // Column header style
             dataGridView1.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(48, 45, 109);
             dataGridView1.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             dataGridView1.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             dataGridView1.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridView1.EnableHeadersVisualStyles = false;
 
-            // Row style
             dataGridView1.DefaultCellStyle.Font = new Font("Segoe UI", 9.75F);
             dataGridView1.DefaultCellStyle.ForeColor = Color.Black;
             dataGridView1.DefaultCellStyle.SelectionBackColor = Color.FromArgb(52, 152, 219);
@@ -135,21 +110,15 @@ namespace IM_Mini_Project
             dataGridView1.DefaultCellStyle.Padding = new Padding(5);
             dataGridView1.RowTemplate.Height = 35;
 
-            // Alternating row colors for better readability
             dataGridView1.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 248, 248);
-
-            // Auto-size columns
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-            // The columns are already defined in designer, set their styles
             if (dataGridView1.Columns.Count > 0)
             {
                 dataGridView1.Columns[0].HeaderText = "Patient ID";
                 dataGridView1.Columns[0].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-
                 dataGridView1.Columns[1].HeaderText = "Name";
                 dataGridView1.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-
                 dataGridView1.Columns[2].HeaderText = "Gender";
                 dataGridView1.Columns[2].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             }
@@ -173,7 +142,7 @@ namespace IM_Mini_Project
             textBox6.KeyPress -= textBox6_KeyPress;
             textBox6.KeyPress += textBox6_KeyPress;
 
-            // First Name (textBox3)
+            // First Name
             if (string.IsNullOrEmpty(textBox3.Text) || textBox3.Text == "Enter first name...")
             {
                 textBox3.Text = "Enter first name...";
@@ -184,7 +153,7 @@ namespace IM_Mini_Project
             textBox3.Enter += TextBox_Enter;
             textBox3.Leave += TextBox_Leave;
 
-            // Last Name (textBox4)
+            // Last Name
             if (string.IsNullOrEmpty(textBox4.Text) || textBox4.Text == "Enter last name...")
             {
                 textBox4.Text = "Enter last name...";
@@ -195,7 +164,7 @@ namespace IM_Mini_Project
             textBox4.Enter += TextBox_Enter;
             textBox4.Leave += TextBox_Leave;
 
-            // Email (textBox2)
+            // Email
             if (string.IsNullOrEmpty(textBox2.Text) || textBox2.Text == "Enter email address...")
             {
                 textBox2.Text = "Enter email address...";
@@ -206,7 +175,7 @@ namespace IM_Mini_Project
             textBox2.Enter += TextBox_Enter;
             textBox2.Leave += TextBox_Leave;
 
-            // Phone (textBox1)
+            // Phone
             if (string.IsNullOrEmpty(textBox1.Text) || textBox1.Text == "Enter phone number...")
             {
                 textBox1.Text = "Enter phone number...";
@@ -217,7 +186,7 @@ namespace IM_Mini_Project
             textBox1.Enter += TextBox_Enter;
             textBox1.Leave += TextBox_Leave;
 
-            // Address (textBox5)
+            // Address
             if (string.IsNullOrEmpty(textBox5.Text) || textBox5.Text == "Enter address...")
             {
                 textBox5.Text = "Enter address...";
@@ -288,7 +257,6 @@ namespace IM_Mini_Project
             comboBox1.SelectedIndex = -1;
             selectedPatientId = "";
 
-            // Reset the DataGridView to show ALL patients
             LoadPatients();
         }
 
@@ -335,11 +303,9 @@ namespace IM_Mini_Project
                 return false;
             }
 
-            // PHONE NUMBER VALIDATION
             if (!IsValidPhoneNumber(phone))
             {
-                MessageBox.Show("Please enter a valid phone number (numbers only, minimum 7 digits).\nExample: 09123456789 or 1234567",
-                    "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please enter a valid phone number (numbers only, minimum 7 digits).", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 textBox1.Focus();
                 textBox1.SelectAll();
                 return false;
@@ -375,7 +341,7 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // LOAD DATA METHODS (USING DATABASEHELPER)
+        // LOAD DATA METHODS - USING STORED PROCEDURES
         // =============================================
 
         private void LoadPatients()
@@ -387,7 +353,11 @@ namespace IM_Mini_Project
 
                 foreach (DataRow row in dt.Rows)
                 {
-                    dataGridView1.Rows.Add(row["PatientID"].ToString(), row["Name"].ToString(), row["Gender"].ToString());
+                    dataGridView1.Rows.Add(
+                        row["PatientID"].ToString(),
+                        row["Name"].ToString(),
+                        row["Gender"].ToString()
+                    );
                 }
 
                 dataGridView1.AutoResizeColumns();
@@ -432,7 +402,11 @@ namespace IM_Mini_Project
                 {
                     foreach (DataRow row in dt.Rows)
                     {
-                        dataGridView1.Rows.Add(row["PatientID"].ToString(), row["Name"].ToString(), row["Gender"].ToString());
+                        dataGridView1.Rows.Add(
+                            row["PatientID"].ToString(),
+                            row["Name"].ToString(),
+                            row["Gender"].ToString()
+                        );
                     }
                     LoadPatientDetails(patientId);
                 }
@@ -447,10 +421,9 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // CRUD OPERATIONS (USING DATABASEHELPER)
+        // CRUD OPERATIONS - USING STORED PROCEDURES
         // =============================================
 
-        // CREATE - Add Patient
         private void btnAdd_Click(object sender, EventArgs e)
         {
             if (!ValidatePatientFields())
@@ -464,13 +437,6 @@ namespace IM_Mini_Project
             string gender = comboBox1.SelectedItem.ToString();
             DateTime dob = dateTimePicker1.Value.Date;
 
-            // Check if email already exists
-            if (db.EmailExists(email))
-            {
-                MessageBox.Show("Email already exists. Please use a different email.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
             int result = db.AddPatient(firstName, lastName, dob, email, phone, address, gender);
             if (result > 0)
             {
@@ -480,7 +446,6 @@ namespace IM_Mini_Project
             }
         }
 
-        // UPDATE - Update Patient
         private void btnUpdate_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(selectedPatientId))
@@ -500,13 +465,6 @@ namespace IM_Mini_Project
             string gender = comboBox1.SelectedItem.ToString();
             DateTime dob = dateTimePicker1.Value.Date;
 
-            // Check if email exists for another patient
-            if (db.EmailExists(email, selectedPatientId))
-            {
-                MessageBox.Show("Email already exists for another patient.", "Duplicate Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
             int result = db.UpdatePatient(selectedPatientId, firstName, lastName, dob, email, phone, address, gender);
             if (result > 0)
             {
@@ -516,7 +474,6 @@ namespace IM_Mini_Project
             }
         }
 
-        // DELETE - Delete Patient
         private void btnDelete_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(selectedPatientId))
@@ -527,12 +484,7 @@ namespace IM_Mini_Project
 
             DialogResult result = MessageBox.Show(
                 "Are you sure you want to delete this patient?\n\n" +
-                "This will also delete all associated records:\n" +
-                "• Appointments\n" +
-                "• Billing records\n" +
-                "• Medical records\n" +
-                "• Prescriptions\n" +
-                "• Lab results\n\n" +
+                "This will also delete all associated records.\n\n" +
                 "This action will be logged in the audit trail.",
                 "Confirm Delete",
                 MessageBoxButtons.YesNo,
@@ -543,30 +495,24 @@ namespace IM_Mini_Project
                 int rowsAffected = db.DeletePatient(selectedPatientId);
                 if (rowsAffected > 0)
                 {
-                    MessageBox.Show("Patient deleted successfully!\n\nAudit log has been updated.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Patient deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     LoadPatients();
                     ClearFields();
                 }
             }
         }
 
-        // REFRESH - Reload all patients
         private void btnRefresh_Click(object sender, EventArgs e)
         {
             LoadPatients();
             ClearFields();
         }
 
-        // CLEAR - Reset everything and show all patients
         private void btnClear_Click(object sender, EventArgs e)
         {
             ClearFields();
             LoadPatients();
         }
-
-        // =============================================
-        // DATA GRID VIEW EVENTS
-        // =============================================
 
         private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
@@ -580,10 +526,6 @@ namespace IM_Mini_Project
                 }
             }
         }
-
-        // =============================================
-        // SEARCH - Patient ID TextBox
-        // =============================================
 
         private void textBox6_KeyPress(object sender, KeyPressEventArgs e)
         {
@@ -601,10 +543,6 @@ namespace IM_Mini_Project
                 e.Handled = true;
             }
         }
-
-        // =============================================
-        // TIMER EVENT
-        // =============================================
 
         private void studentIDTimer_Tick(object sender, EventArgs e)
         {

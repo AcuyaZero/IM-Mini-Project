@@ -9,7 +9,7 @@ namespace IM_Mini_Project
     public class Database
     {
         // =============================================
-        // SINGLE CONNECTION STRING - ONE PLACE TO UPDATE
+        // SINGLE CONNECTION STRING
         // =============================================
         private string connectionString = "Server=localhost;Database=hospital_db;Uid=root;Pwd=1234;";
 
@@ -82,7 +82,7 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // GET DATA TABLE (FOR GRIDS/LISTS)
+        // GET DATA TABLE
         // =============================================
         public DataTable GetDataTable(string query, Dictionary<string, object> parameters = null)
         {
@@ -115,7 +115,7 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // GET DATA READER (FOR SINGLE RECORD)
+        // GET DATA READER
         // =============================================
         public MySqlDataReader GetDataReader(string query, Dictionary<string, object> parameters = null)
         {
@@ -141,575 +141,517 @@ namespace IM_Mini_Project
         }
 
         // =============================================
+        // EXECUTE STORED PROCEDURE (NON-QUERY)
+        // =============================================
+        public int ExecuteStoredProcedure(string procedureName, Dictionary<string, object> parameters = null)
+        {
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    using (MySqlCommand cmd = new MySqlCommand(procedureName, conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        if (parameters != null)
+                        {
+                            foreach (var param in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(param.Key, param.Value);
+                            }
+                        }
+                        return cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return -1;
+            }
+        }
+
+        // =============================================
+        // EXECUTE STORED PROCEDURE (SCALAR)
+        // =============================================
+        public object ExecuteScalarProcedure(string procedureName, Dictionary<string, object> parameters = null)
+        {
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    using (MySqlCommand cmd = new MySqlCommand(procedureName, conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        if (parameters != null)
+                        {
+                            foreach (var param in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(param.Key, param.Value);
+                            }
+                        }
+                        return cmd.ExecuteScalar();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+        }
+
+        // =============================================
+        // EXECUTE STORED PROCEDURE (READER)
+        // =============================================
+        public MySqlDataReader ExecuteReaderProcedure(string procedureName, Dictionary<string, object> parameters = null)
+        {
+            try
+            {
+                MySqlConnection conn = GetConnection();
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand(procedureName, conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                if (parameters != null)
+                {
+                    foreach (var param in parameters)
+                    {
+                        cmd.Parameters.AddWithValue(param.Key, param.Value);
+                    }
+                }
+                return cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+        }
+
+        // =============================================
+        // EXECUTE STORED PROCEDURE (DATATABLE)
+        // =============================================
+        public DataTable ExecuteDataTableProcedure(string procedureName, Dictionary<string, object> parameters = null)
+        {
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    using (MySqlCommand cmd = new MySqlCommand(procedureName, conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        if (parameters != null)
+                        {
+                            foreach (var param in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(param.Key, param.Value);
+                            }
+                        }
+                        MySqlDataAdapter adapter = new MySqlDataAdapter(cmd);
+                        DataTable dt = new DataTable();
+                        adapter.Fill(dt);
+                        return dt;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+        }
+
+
+        // =============================================
         // PATIENT METHODS
         // =============================================
 
-        // GET ALL PATIENTS
         public DataTable GetAllPatients()
         {
-            string query = @"SELECT 
-                            patient_id AS 'PatientID',
-                            CONCAT(first_name, ' ', last_name) AS 'Name',
-                            gender AS 'Gender'
-                            FROM patient 
-                            ORDER BY patient_id";
-            return GetDataTable(query);
+            return ExecuteDataTableProcedure("sp_GetAllPatients");
         }
 
-        // GET PATIENT BY ID
         public DataTable GetPatientById(string patientId)
         {
-            string query = @"SELECT 
-                            patient_id AS 'PatientID',
-                            CONCAT(first_name, ' ', last_name) AS 'Name',
-                            gender AS 'Gender'
-                            FROM patient 
-                            WHERE patient_id = @id";
             var parameters = new Dictionary<string, object>
             {
-                { "@id", patientId }
+                { "p_patient_id", patientId }
             };
-            return GetDataTable(query, parameters);
+            return ExecuteDataTableProcedure("sp_GetPatientById", parameters);
         }
 
-        // GET PATIENT DETAILS
         public MySqlDataReader GetPatientDetails(string patientId)
         {
-            string query = "SELECT * FROM patient WHERE patient_id = @id";
             var parameters = new Dictionary<string, object>
             {
-                { "@id", patientId }
+                { "p_patient_id", patientId }
             };
-            return GetDataReader(query, parameters);
+            return ExecuteReaderProcedure("sp_GetPatientDetails", parameters);
         }
 
-        // ADD PATIENT
         public int AddPatient(string firstName, string lastName, DateTime dob, string email, string phone, string address, string gender)
         {
-            string query = @"INSERT INTO patient (first_name, last_name, date_of_birth, email, contact_no, address, gender) 
-                            VALUES (@firstName, @lastName, @dob, @email, @phone, @address, @gender)";
             var parameters = new Dictionary<string, object>
             {
-                { "@firstName", firstName },
-                { "@lastName", lastName },
-                { "@dob", dob },
-                { "@email", email },
-                { "@phone", phone },
-                { "@address", address },
-                { "@gender", gender }
+                { "p_first_name", firstName },
+                { "p_last_name", lastName },
+                { "p_date_of_birth", dob },
+                { "p_email", email },
+                { "p_contact_no", phone },
+                { "p_address", address },
+                { "p_gender", gender }
             };
-            return ExecuteNonQuery(query, parameters);
+            return ExecuteStoredProcedure("sp_AddPatient", parameters);
         }
 
-        // UPDATE PATIENT
         public int UpdatePatient(string patientId, string firstName, string lastName, DateTime dob, string email, string phone, string address, string gender)
         {
-            string query = @"UPDATE patient SET 
-                            first_name = @firstName,
-                            last_name = @lastName,
-                            date_of_birth = @dob,
-                            email = @email,
-                            contact_no = @phone,
-                            address = @address,
-                            gender = @gender
-                            WHERE patient_id = @patientId";
             var parameters = new Dictionary<string, object>
             {
-                { "@patientId", patientId },
-                { "@firstName", firstName },
-                { "@lastName", lastName },
-                { "@dob", dob },
-                { "@email", email },
-                { "@phone", phone },
-                { "@address", address },
-                { "@gender", gender }
+                { "p_patient_id", patientId },
+                { "p_first_name", firstName },
+                { "p_last_name", lastName },
+                { "p_date_of_birth", dob },
+                { "p_email", email },
+                { "p_contact_no", phone },
+                { "p_address", address },
+                { "p_gender", gender }
             };
-            return ExecuteNonQuery(query, parameters);
+            return ExecuteStoredProcedure("sp_UpdatePatient", parameters);
         }
 
-        // DELETE PATIENT
         public int DeletePatient(string patientId)
         {
-            string query = "DELETE FROM patient WHERE patient_id = @patientId";
             var parameters = new Dictionary<string, object>
             {
-                { "@patientId", patientId }
+                { "p_patient_id", patientId }
             };
-            return ExecuteNonQuery(query, parameters);
+            return ExecuteStoredProcedure("sp_DeletePatient", parameters);
         }
 
-        // CHECK IF EMAIL EXISTS
-        public bool EmailExists(string email, string excludePatientId = null)
-        {
-            string query = "SELECT COUNT(*) FROM patient WHERE email = @email";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@email", email }
-            };
-
-            if (!string.IsNullOrEmpty(excludePatientId))
-            {
-                query += " AND patient_id != @patientId";
-                parameters.Add("@patientId", excludePatientId);
-            }
-
-            object result = ExecuteScalar(query, parameters);
-            if (result == null) return true;
-            return Convert.ToInt32(result) > 0;
-        }
-
-        // GET PATIENTS FOR AUTO-COMPLETE
         public DataTable GetPatientsForAutoComplete(string searchText)
         {
-            string query = @"SELECT patient_id, CONCAT(first_name, ' ', last_name) AS patient_name 
-                            FROM patient 
-                            WHERE first_name LIKE @search OR last_name LIKE @search 
-                            LIMIT 10";
             var parameters = new Dictionary<string, object>
             {
-                { "@search", "%" + searchText + "%" }
+                { "p_search_text", searchText }
             };
-            return GetDataTable(query, parameters);
+            return ExecuteDataTableProcedure("sp_GetPatientsForAutoComplete", parameters);
         }
 
-        // GET ALL PATIENT NAMES
         public DataTable GetAllPatientNames()
         {
-            string query = "SELECT patient_id, CONCAT(first_name, ' ', last_name) AS patient_name FROM patient ORDER BY patient_name";
-            return GetDataTable(query);
+            return ExecuteDataTableProcedure("sp_GetAllPatientNames");
         }
+
+        public int GetPatientIdByName(string patientName)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "p_patient_name", patientName }
+            };
+            var result = ExecuteScalarProcedure("sp_GetPatientIdByName", parameters);
+            return result != null ? Convert.ToInt32(result) : -1;
+        }
+
 
         // =============================================
         // DOCTOR METHODS
         // =============================================
 
-        // GET ALL DOCTORS
         public DataTable GetAllDoctors()
         {
-            string query = @"SELECT 
-                            doctor_id AS 'DoctorID',
-                            CONCAT(first_name, ' ', last_name) AS 'Name',
-                            d.department_name AS 'Department'
-                            FROM doctor doc
-                            LEFT JOIN department d ON doc.department_id = d.department_id
-                            ORDER BY doctor_id";
-            return GetDataTable(query);
+            return ExecuteDataTableProcedure("sp_GetAllDoctors");
         }
 
-        // GET DOCTOR BY ID
         public DataTable GetDoctorById(string doctorId)
         {
-            string query = @"SELECT 
-                            doctor_id AS 'DoctorID',
-                            CONCAT(first_name, ' ', last_name) AS 'Name',
-                            d.department_name AS 'Department'
-                            FROM doctor doc
-                            LEFT JOIN department d ON doc.department_id = d.department_id
-                            WHERE doctor_id = @id";
             var parameters = new Dictionary<string, object>
             {
-                { "@id", doctorId }
+                { "p_doctor_id", doctorId }
             };
-            return GetDataTable(query, parameters);
+            return ExecuteDataTableProcedure("sp_GetDoctorById", parameters);
         }
 
-        // GET DOCTOR DETAILS
         public MySqlDataReader GetDoctorDetails(string doctorId)
         {
-            string query = @"SELECT doc.*, d.department_name 
-                            FROM doctor doc
-                            LEFT JOIN department d ON doc.department_id = d.department_id
-                            WHERE doc.doctor_id = @id";
             var parameters = new Dictionary<string, object>
             {
-                { "@id", doctorId }
+                { "p_doctor_id", doctorId }
             };
-            return GetDataReader(query, parameters);
+            return ExecuteReaderProcedure("sp_GetDoctorDetails", parameters);
         }
 
-        // ADD DOCTOR
         public int AddDoctor(string firstName, string lastName, string specialization, string licenseNumber, string phone, string email, object departmentId)
         {
-            string query = @"INSERT INTO doctor (first_name, last_name, specialization, license_number, contact_number, email, department_id) 
-                            VALUES (@firstName, @lastName, @specialization, @license, @phone, @email, @department)";
             var parameters = new Dictionary<string, object>
             {
-                { "@firstName", firstName },
-                { "@lastName", lastName },
-                { "@specialization", specialization },
-                { "@license", licenseNumber },
-                { "@phone", phone },
-                { "@email", email },
-                { "@department", departmentId }
+                { "p_first_name", firstName },
+                { "p_last_name", lastName },
+                { "p_specialization", specialization },
+                { "p_license_number", licenseNumber },
+                { "p_contact_number", phone },
+                { "p_email", email },
+                { "p_department_id", departmentId ?? DBNull.Value }
             };
-            return ExecuteNonQuery(query, parameters);
+            return ExecuteStoredProcedure("sp_AddDoctor", parameters);
         }
 
-        // UPDATE DOCTOR
         public int UpdateDoctor(string doctorId, string firstName, string lastName, string specialization, string licenseNumber, string phone, string email, object departmentId)
         {
-            string query = @"UPDATE doctor SET 
-                            first_name = @firstName,
-                            last_name = @lastName,
-                            specialization = @specialization,
-                            license_number = @license,
-                            contact_number = @phone,
-                            email = @email,
-                            department_id = @department
-                            WHERE doctor_id = @doctorId";
             var parameters = new Dictionary<string, object>
             {
-                { "@doctorId", doctorId },
-                { "@firstName", firstName },
-                { "@lastName", lastName },
-                { "@specialization", specialization },
-                { "@license", licenseNumber },
-                { "@phone", phone },
-                { "@email", email },
-                { "@department", departmentId }
+                { "p_doctor_id", doctorId },
+                { "p_first_name", firstName },
+                { "p_last_name", lastName },
+                { "p_specialization", specialization },
+                { "p_license_number", licenseNumber },
+                { "p_contact_number", phone },
+                { "p_email", email },
+                { "p_department_id", departmentId ?? DBNull.Value }
             };
-            return ExecuteNonQuery(query, parameters);
+            return ExecuteStoredProcedure("sp_UpdateDoctor", parameters);
         }
 
-        // DELETE DOCTOR
         public int DeleteDoctor(string doctorId)
         {
-            string query = "DELETE FROM doctor WHERE doctor_id = @doctorId";
             var parameters = new Dictionary<string, object>
             {
-                { "@doctorId", doctorId }
+                { "p_doctor_id", doctorId }
             };
-            return ExecuteNonQuery(query, parameters);
+            return ExecuteStoredProcedure("sp_DeleteDoctor", parameters);
         }
 
-        // CHECK IF LICENSE EXISTS
-        public bool LicenseExists(string licenseNumber, string excludeDoctorId = null)
-        {
-            string query = "SELECT COUNT(*) FROM doctor WHERE license_number = @license";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@license", licenseNumber }
-            };
-
-            if (!string.IsNullOrEmpty(excludeDoctorId))
-            {
-                query += " AND doctor_id != @doctorId";
-                parameters.Add("@doctorId", excludeDoctorId);
-            }
-
-            object result = ExecuteScalar(query, parameters);
-            if (result == null) return true;
-            return Convert.ToInt32(result) > 0;
-        }
-
-        // CHECK IF DOCTOR EMAIL EXISTS
-        public bool DoctorEmailExists(string email, string excludeDoctorId = null)
-        {
-            string query = "SELECT COUNT(*) FROM doctor WHERE email = @email";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@email", email }
-            };
-
-            if (!string.IsNullOrEmpty(excludeDoctorId))
-            {
-                query += " AND doctor_id != @doctorId";
-                parameters.Add("@doctorId", excludeDoctorId);
-            }
-
-            object result = ExecuteScalar(query, parameters);
-            if (result == null) return true;
-            return Convert.ToInt32(result) > 0;
-        }
-
-        // GET DOCTORS FOR AUTO-COMPLETE
         public DataTable GetDoctorsForAutoComplete(string searchText)
         {
-            string query = @"SELECT doctor_id, CONCAT(first_name, ' ', last_name) AS doctor_name 
-                            FROM doctor 
-                            WHERE first_name LIKE @search OR last_name LIKE @search 
-                            LIMIT 10";
             var parameters = new Dictionary<string, object>
             {
-                { "@search", "%" + searchText + "%" }
+                { "p_search_text", searchText }
             };
-            return GetDataTable(query, parameters);
+            return ExecuteDataTableProcedure("sp_GetDoctorsForAutoComplete", parameters);
         }
 
-        // GET ALL DOCTOR NAMES
         public DataTable GetAllDoctorNames()
         {
-            string query = "SELECT doctor_id, CONCAT(first_name, ' ', last_name) AS doctor_name FROM doctor ORDER BY doctor_name";
-            return GetDataTable(query);
+            return ExecuteDataTableProcedure("sp_GetAllDoctorNames");
         }
 
-        // GET ALL DEPARTMENTS
+        public int GetDoctorIdByName(string doctorName)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "p_doctor_name", doctorName }
+            };
+            var result = ExecuteScalarProcedure("sp_GetDoctorIdByName", parameters);
+            return result != null ? Convert.ToInt32(result) : -1;
+        }
+
         public DataTable GetAllDepartments()
         {
-            string query = "SELECT department_id, department_name FROM department ORDER BY department_name";
-            return GetDataTable(query);
+            return ExecuteDataTableProcedure("sp_GetAllDepartments");
         }
+
 
         // =============================================
         // APPOINTMENT METHODS
         // =============================================
 
-        // GET ALL APPOINTMENTS
         public DataTable GetAllAppointments()
         {
-            string query = @"SELECT 
-                            a.appointment_id AS 'AppointmentID',
-                            CONCAT(p.first_name, ' ', p.last_name) AS 'Patient',
-                            CONCAT(d.first_name, ' ', d.last_name) AS 'Doctor'
-                            FROM appointment a
-                            LEFT JOIN patient p ON a.patient_id = p.patient_id
-                            LEFT JOIN doctor d ON a.doctor_id = d.doctor_id
-                            ORDER BY a.appointment_id";
-            return GetDataTable(query);
+            return ExecuteDataTableProcedure("sp_GetAllAppointments");
         }
 
-        // GET APPOINTMENT BY ID
         public DataTable GetAppointmentById(string appointmentId)
         {
-            string query = @"SELECT 
-                            a.appointment_id AS 'AppointmentID',
-                            CONCAT(p.first_name, ' ', p.last_name) AS 'Patient',
-                            CONCAT(d.first_name, ' ', d.last_name) AS 'Doctor'
-                            FROM appointment a
-                            LEFT JOIN patient p ON a.patient_id = p.patient_id
-                            LEFT JOIN doctor d ON a.doctor_id = d.doctor_id
-                            WHERE a.appointment_id = @id";
             var parameters = new Dictionary<string, object>
             {
-                { "@id", appointmentId }
+                { "p_appointment_id", appointmentId }
             };
-            return GetDataTable(query, parameters);
+            return ExecuteDataTableProcedure("sp_GetAppointmentById", parameters);
         }
 
-        // GET APPOINTMENT DETAILS
         public MySqlDataReader GetAppointmentDetails(string appointmentId)
         {
-            string query = @"SELECT 
-                            a.*,
-                            CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
-                            CONCAT(d.first_name, ' ', d.last_name) AS doctor_name
-                            FROM appointment a
-                            LEFT JOIN patient p ON a.patient_id = p.patient_id
-                            LEFT JOIN doctor d ON a.doctor_id = d.doctor_id
-                            WHERE a.appointment_id = @id";
             var parameters = new Dictionary<string, object>
             {
-                { "@id", appointmentId }
+                { "p_appointment_id", appointmentId }
             };
-            return GetDataReader(query, parameters);
+            return ExecuteReaderProcedure("sp_GetAppointmentDetails", parameters);
         }
 
-        // ADD APPOINTMENT
         public int AddAppointment(string patientId, string doctorId, DateTime date, TimeSpan time, string status)
         {
-            string query = @"INSERT INTO appointment (patient_id, doctor_id, appointment_date, appointment_time, appointment_status) 
-                            VALUES (@patientId, @doctorId, @date, @time, @status)";
             var parameters = new Dictionary<string, object>
             {
-                { "@patientId", patientId },
-                { "@doctorId", doctorId },
-                { "@date", date },
-                { "@time", time },
-                { "@status", status }
+                { "p_patient_id", patientId },
+                { "p_doctor_id", doctorId },
+                { "p_appointment_date", date },
+                { "p_appointment_time", time },
+                { "p_appointment_status", status }
             };
-            return ExecuteNonQuery(query, parameters);
+            return ExecuteStoredProcedure("sp_AddAppointment", parameters);
         }
 
-        // UPDATE APPOINTMENT
         public int UpdateAppointment(string appointmentId, string patientId, string doctorId, DateTime date, TimeSpan time, string status)
         {
-            string query = @"UPDATE appointment SET 
-                            patient_id = @patientId,
-                            doctor_id = @doctorId,
-                            appointment_date = @date,
-                            appointment_time = @time,
-                            appointment_status = @status
-                            WHERE appointment_id = @appointmentId";
             var parameters = new Dictionary<string, object>
             {
-                { "@appointmentId", appointmentId },
-                { "@patientId", patientId },
-                { "@doctorId", doctorId },
-                { "@date", date },
-                { "@time", time },
-                { "@status", status }
+                { "p_appointment_id", appointmentId },
+                { "p_patient_id", patientId },
+                { "p_doctor_id", doctorId },
+                { "p_appointment_date", date },
+                { "p_appointment_time", time },
+                { "p_appointment_status", status }
             };
-            return ExecuteNonQuery(query, parameters);
+            return ExecuteStoredProcedure("sp_UpdateAppointment", parameters);
         }
 
-        // DELETE APPOINTMENT
         public int DeleteAppointment(string appointmentId)
         {
-            string query = "DELETE FROM appointment WHERE appointment_id = @appointmentId";
             var parameters = new Dictionary<string, object>
             {
-                { "@appointmentId", appointmentId }
+                { "p_appointment_id", appointmentId }
             };
-            return ExecuteNonQuery(query, parameters);
+            return ExecuteStoredProcedure("sp_DeleteAppointment", parameters);
         }
 
-        // CHECK FOR DOUBLE BOOKING
         public bool IsDoctorAvailable(string doctorId, DateTime date, TimeSpan time, string excludeAppointmentId = null)
         {
-            string query = @"SELECT COUNT(*) FROM appointment 
-                            WHERE doctor_id = @doctorId 
-                            AND appointment_date = @date 
-                            AND appointment_time = @time 
-                            AND appointment_status IN ('Scheduled', 'No-Show')";
             var parameters = new Dictionary<string, object>
             {
-                { "@doctorId", doctorId },
-                { "@date", date },
-                { "@time", time }
+                { "p_doctor_id", doctorId },
+                { "p_appointment_date", date },
+                { "p_appointment_time", time },
+                { "p_exclude_appointment_id", excludeAppointmentId ?? "" }
             };
-
-            if (!string.IsNullOrEmpty(excludeAppointmentId))
-            {
-                query += " AND appointment_id != @appointmentId";
-                parameters.Add("@appointmentId", excludeAppointmentId);
-            }
-
-            object result = ExecuteScalar(query, parameters);
-            if (result == null) return false;
-            return Convert.ToInt32(result) == 0;
+            var result = ExecuteScalarProcedure("sp_IsDoctorAvailable", parameters);
+            return result != null && Convert.ToInt32(result) == 1;
         }
 
-        // GET PATIENT ID BY NAME
-        public int GetPatientIdByName(string patientName)
-        {
-            string query = "SELECT patient_id FROM patient WHERE CONCAT(first_name, ' ', last_name) = @name";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@name", patientName }
-            };
-            object result = ExecuteScalar(query, parameters);
-            if (result == null) return -1;
-            return Convert.ToInt32(result);
-        }
-
-        // GET DOCTOR ID BY NAME
-        public int GetDoctorIdByName(string doctorName)
-        {
-            string query = "SELECT doctor_id FROM doctor WHERE CONCAT(first_name, ' ', last_name) = @name";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@name", doctorName }
-            };
-            object result = ExecuteScalar(query, parameters);
-            if (result == null) return -1;
-            return Convert.ToInt32(result);
-        }
 
         // =============================================
-        // BILLING METHODS - ADD THIS SECTION
+        // BILLING METHODS
         // =============================================
 
-        // GET ALL BILLING RECORDS
         public DataTable GetAllBillingRecords()
         {
-            string query = @"SELECT 
-                    b.billing_id AS 'BillingID',
-                    CONCAT(p.first_name, ' ', p.last_name) AS 'Patient',
-                    b.transaction_date AS 'Date',
-                    b.total_amount AS 'Total',
-                    b.insurance_coverage AS 'Coverage',
-                    b.patient_balance AS 'Balance',
-                    b.payment_status AS 'Status'
-                    FROM billing b
-                    LEFT JOIN patient p ON b.patient_id = p.patient_id
-                    LEFT JOIN appointment a ON b.appointment_id = a.appointment_id
-                    ORDER BY b.billing_id DESC";
-            return GetDataTable(query);
+            return ExecuteDataTableProcedure("sp_GetAllBillingRecords");
         }
 
-        // GET BILLING DETAILS BY ID
         public MySqlDataReader GetBillingDetails(string billingId)
         {
-            string query = @"SELECT 
-                    b.billing_id,
-                    b.patient_id,
-                    b.appointment_id,
-                    b.insurance_id,
-                    b.total_amount,
-                    b.insurance_coverage,
-                    b.patient_balance,
-                    b.payment_status,
-                    b.payment_method,
-                    b.transaction_date,
-                    CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
-                    a.doctor_id AS doctor_id,
-                    CONCAT(d.first_name, ' ', d.last_name) AS doctor_name
-                    FROM billing b
-                    LEFT JOIN patient p ON b.patient_id = p.patient_id
-                    LEFT JOIN appointment a ON b.appointment_id = a.appointment_id
-                    LEFT JOIN doctor d ON a.doctor_id = d.doctor_id
-                    WHERE b.billing_id = @id";
             var parameters = new Dictionary<string, object>
-    {
-        { "@id", billingId }
-    };
-            return GetDataReader(query, parameters);
+            {
+                { "p_billing_id", billingId }
+            };
+            return ExecuteReaderProcedure("sp_GetBillingDetails", parameters);
         }
 
-        // ADD BILLING RECORD
         public int AddBilling(string patientId, string appointmentId, object insuranceId, decimal totalAmount, decimal insuranceCoverage, decimal patientBalance, string paymentStatus, string paymentMethod)
         {
-            string query = @"INSERT INTO billing 
-                    (patient_id, appointment_id, insurance_id, total_amount, insurance_coverage, patient_balance, payment_status, payment_method, transaction_date) 
-                    VALUES (@patientId, @appointmentId, @insuranceId, @totalAmount, @insuranceCoverage, @patientBalance, @paymentStatus, @paymentMethod, CURDATE())";
             var parameters = new Dictionary<string, object>
-    {
-        { "@patientId", patientId },
-        { "@appointmentId", appointmentId },
-        { "@insuranceId", insuranceId },
-        { "@totalAmount", totalAmount },
-        { "@insuranceCoverage", insuranceCoverage },
-        { "@patientBalance", patientBalance },
-        { "@paymentStatus", paymentStatus },
-        { "@paymentMethod", paymentMethod }
-    };
-            return ExecuteNonQuery(query, parameters);
+            {
+                { "p_patient_id", patientId },
+                { "p_appointment_id", appointmentId },
+                { "p_insurance_id", insuranceId ?? DBNull.Value },
+                { "p_total_amount", totalAmount },
+                { "p_insurance_coverage", insuranceCoverage },
+                { "p_patient_balance", patientBalance },
+                { "p_payment_status", paymentStatus },
+                { "p_payment_method", paymentMethod ?? "" }
+            };
+            return ExecuteStoredProcedure("sp_AddBilling", parameters);
         }
 
-        // UPDATE BILLING RECORD
         public int UpdateBilling(string billingId, object insuranceId, decimal totalAmount, decimal insuranceCoverage, decimal patientBalance, string paymentStatus, string paymentMethod)
         {
-            string query = @"UPDATE billing SET 
-                    insurance_id = @insuranceId,
-                    total_amount = @totalAmount,
-                    insurance_coverage = @insuranceCoverage,
-                    patient_balance = @patientBalance,
-                    payment_status = @paymentStatus,
-                    payment_method = @paymentMethod,
-                    transaction_date = CURDATE()
-                    WHERE billing_id = @billingId";
             var parameters = new Dictionary<string, object>
-    {
-        { "@billingId", billingId },
-        { "@insuranceId", insuranceId },
-        { "@totalAmount", totalAmount },
-        { "@insuranceCoverage", insuranceCoverage },
-        { "@patientBalance", patientBalance },
-        { "@paymentStatus", paymentStatus },
-        { "@paymentMethod", paymentMethod }
-    };
-            return ExecuteNonQuery(query, parameters);
+            {
+                { "p_billing_id", billingId },
+                { "p_insurance_id", insuranceId ?? DBNull.Value },
+                { "p_total_amount", totalAmount },
+                { "p_insurance_coverage", insuranceCoverage },
+                { "p_patient_balance", patientBalance },
+                { "p_payment_status", paymentStatus },
+                { "p_payment_method", paymentMethod ?? "" }
+            };
+            return ExecuteStoredProcedure("sp_UpdateBilling", parameters);
         }
 
-        // DELETE BILLING RECORD
         public int DeleteBilling(string billingId)
         {
-            string query = "DELETE FROM billing WHERE billing_id = @billingId";
             var parameters = new Dictionary<string, object>
-    {
-        { "@billingId", billingId }
-    };
-            return ExecuteNonQuery(query, parameters);
+            {
+                { "p_billing_id", billingId }
+            };
+            return ExecuteStoredProcedure("sp_DeleteBilling", parameters);
+        }
+
+
+        // =============================================
+        // MEDICAL RECORD METHODS
+        // =============================================
+
+        public DataTable GetAllMedicalRecords()
+        {
+            return ExecuteDataTableProcedure("sp_GetAllMedicalRecords");
+        }
+
+        public DataTable GetMedicalRecordById(string recordId)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "p_record_id", recordId }
+            };
+            return ExecuteDataTableProcedure("sp_GetMedicalRecordById", parameters);
+        }
+
+        public MySqlDataReader GetMedicalRecordDetails(string recordId)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "p_record_id", recordId }
+            };
+            return ExecuteReaderProcedure("sp_GetMedicalRecordDetails", parameters);
+        }
+
+        public int AddMedicalRecord(string patientId, string doctorId, string diagnosis, string treatment, string prescription, DateTime dateRecorded)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "p_patient_id", patientId },
+                { "p_doctor_id", doctorId },
+                { "p_diagnosis", diagnosis },
+                { "p_treatment", treatment ?? "" },
+                { "p_prescription", prescription ?? "" },
+                { "p_date_recorded", dateRecorded }
+            };
+            return ExecuteStoredProcedure("sp_AddMedicalRecord", parameters);
+        }
+
+        public int UpdateMedicalRecord(string recordId, string patientId, string doctorId, string diagnosis, string treatment, string prescription, DateTime dateRecorded)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "p_record_id", recordId },
+                { "p_patient_id", patientId },
+                { "p_doctor_id", doctorId },
+                { "p_diagnosis", diagnosis },
+                { "p_treatment", treatment ?? "" },
+                { "p_prescription", prescription ?? "" },
+                { "p_date_recorded", dateRecorded }
+            };
+            return ExecuteStoredProcedure("sp_UpdateMedicalRecord", parameters);
+        }
+
+        public int DeleteMedicalRecord(string recordId)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "p_record_id", recordId }
+            };
+            return ExecuteStoredProcedure("sp_DeleteMedicalRecord", parameters);
         }
     }
 }
