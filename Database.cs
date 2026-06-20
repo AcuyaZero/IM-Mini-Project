@@ -13,34 +13,58 @@ namespace IM_Mini_Project
         // =============================================
         private string connectionString = "Server=localhost;Database=hospital_db;Uid=root;Pwd=1234;";
 
-        // =============================================
-        // GET CONNECTION
-        // =============================================
         public MySqlConnection GetConnection()
         {
             return new MySqlConnection(connectionString);
         }
 
         // =============================================
-        // EXECUTE NON-QUERY (INSERT, UPDATE, DELETE)
+        // EXECUTE STORED PROCEDURE WITH OUTPUT PARAMETERS
         // =============================================
-        public int ExecuteNonQuery(string query, Dictionary<string, object> parameters = null)
+        public int ExecuteStoredProcedureWithOutput(string procedureName, Dictionary<string, object> parameters)
         {
             try
             {
                 using (MySqlConnection conn = GetConnection())
                 {
                     conn.Open();
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
+                    using (MySqlCommand cmd = new MySqlCommand(procedureName, conn))
                     {
-                        if (parameters != null)
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        foreach (var param in parameters)
                         {
-                            foreach (var param in parameters)
+                            if (param.Value is MySqlDbType)
+                            {
+                                cmd.Parameters.Add(param.Key, (MySqlDbType)param.Value);
+                                cmd.Parameters[param.Key].Direction = ParameterDirection.Output;
+                            }
+                            else
                             {
                                 cmd.Parameters.AddWithValue(param.Key, param.Value);
                             }
                         }
-                        return cmd.ExecuteNonQuery();
+
+                        cmd.ExecuteNonQuery();
+
+                        foreach (var param in new List<string>(parameters.Keys))
+                        {
+                            if (cmd.Parameters.Contains(param))
+                            {
+                                var dbParam = cmd.Parameters[param];
+                                if (dbParam.Direction == ParameterDirection.Output || dbParam.Direction == ParameterDirection.InputOutput)
+                                {
+                                    parameters[param] = dbParam.Value;
+                                }
+                            }
+                        }
+
+                        if (parameters.ContainsKey("p_result_code"))
+                        {
+                            return Convert.ToInt32(parameters["p_result_code"]);
+                        }
+
+                        return 1;
                     }
                 }
             }
@@ -52,96 +76,7 @@ namespace IM_Mini_Project
         }
 
         // =============================================
-        // EXECUTE SCALAR (GET SINGLE VALUE)
-        // =============================================
-        public object ExecuteScalar(string query, Dictionary<string, object> parameters = null)
-        {
-            try
-            {
-                using (MySqlConnection conn = GetConnection())
-                {
-                    conn.Open();
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
-                    {
-                        if (parameters != null)
-                        {
-                            foreach (var param in parameters)
-                            {
-                                cmd.Parameters.AddWithValue(param.Key, param.Value);
-                            }
-                        }
-                        return cmd.ExecuteScalar();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return null;
-            }
-        }
-
-        // =============================================
-        // GET DATA TABLE
-        // =============================================
-        public DataTable GetDataTable(string query, Dictionary<string, object> parameters = null)
-        {
-            try
-            {
-                using (MySqlConnection conn = GetConnection())
-                {
-                    conn.Open();
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
-                    {
-                        if (parameters != null)
-                        {
-                            foreach (var param in parameters)
-                            {
-                                cmd.Parameters.AddWithValue(param.Key, param.Value);
-                            }
-                        }
-                        MySqlDataAdapter adapter = new MySqlDataAdapter(cmd);
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-                        return dt;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return null;
-            }
-        }
-
-        // =============================================
-        // GET DATA READER
-        // =============================================
-        public MySqlDataReader GetDataReader(string query, Dictionary<string, object> parameters = null)
-        {
-            try
-            {
-                MySqlConnection conn = GetConnection();
-                conn.Open();
-                MySqlCommand cmd = new MySqlCommand(query, conn);
-                if (parameters != null)
-                {
-                    foreach (var param in parameters)
-                    {
-                        cmd.Parameters.AddWithValue(param.Key, param.Value);
-                    }
-                }
-                return cmd.ExecuteReader(CommandBehavior.CloseConnection);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return null;
-            }
-        }
-
-        // =============================================
-        // EXECUTE STORED PROCEDURE (NON-QUERY)
+        // EXECUTE STORED PROCEDURE (NO OUTPUT PARAMETERS)
         // =============================================
         public int ExecuteStoredProcedure(string procedureName, Dictionary<string, object> parameters = null)
         {
@@ -263,6 +198,69 @@ namespace IM_Mini_Project
             }
         }
 
+        // =============================================
+        // GET DATA TABLE (FOR INLINE SQL - LEGACY)
+        // =============================================
+        public DataTable GetDataTable(string query, Dictionary<string, object> parameters = null)
+        {
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
+                    {
+                        if (parameters != null)
+                        {
+                            foreach (var param in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(param.Key, param.Value);
+                            }
+                        }
+                        MySqlDataAdapter adapter = new MySqlDataAdapter(cmd);
+                        DataTable dt = new DataTable();
+                        adapter.Fill(dt);
+                        return dt;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+        }
+
+        // =============================================
+        // EXECUTE SCALAR (FOR INLINE SQL - LEGACY)
+        // =============================================
+        public object ExecuteScalar(string query, Dictionary<string, object> parameters = null)
+        {
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
+                    {
+                        if (parameters != null)
+                        {
+                            foreach (var param in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(param.Key, param.Value);
+                            }
+                        }
+                        return cmd.ExecuteScalar();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+        }
+
 
         // =============================================
         // PATIENT METHODS
@@ -301,9 +299,11 @@ namespace IM_Mini_Project
                 { "p_email", email },
                 { "p_contact_no", phone },
                 { "p_address", address },
-                { "p_gender", gender }
+                { "p_gender", gender },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_AddPatient", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_AddPatient", parameters);
         }
 
         public int UpdatePatient(string patientId, string firstName, string lastName, DateTime dob, string email, string phone, string address, string gender)
@@ -317,18 +317,22 @@ namespace IM_Mini_Project
                 { "p_email", email },
                 { "p_contact_no", phone },
                 { "p_address", address },
-                { "p_gender", gender }
+                { "p_gender", gender },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_UpdatePatient", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_UpdatePatient", parameters);
         }
 
         public int DeletePatient(string patientId)
         {
             var parameters = new Dictionary<string, object>
             {
-                { "p_patient_id", patientId }
+                { "p_patient_id", patientId },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_DeletePatient", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_DeletePatient", parameters);
         }
 
         public DataTable GetPatientsForAutoComplete(string searchText)
@@ -393,9 +397,11 @@ namespace IM_Mini_Project
                 { "p_license_number", licenseNumber },
                 { "p_contact_number", phone },
                 { "p_email", email },
-                { "p_department_id", departmentId ?? DBNull.Value }
+                { "p_department_id", departmentId ?? DBNull.Value },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_AddDoctor", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_AddDoctor", parameters);
         }
 
         public int UpdateDoctor(string doctorId, string firstName, string lastName, string specialization, string licenseNumber, string phone, string email, object departmentId)
@@ -409,18 +415,22 @@ namespace IM_Mini_Project
                 { "p_license_number", licenseNumber },
                 { "p_contact_number", phone },
                 { "p_email", email },
-                { "p_department_id", departmentId ?? DBNull.Value }
+                { "p_department_id", departmentId ?? DBNull.Value },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_UpdateDoctor", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_UpdateDoctor", parameters);
         }
 
         public int DeleteDoctor(string doctorId)
         {
             var parameters = new Dictionary<string, object>
             {
-                { "p_doctor_id", doctorId }
+                { "p_doctor_id", doctorId },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_DeleteDoctor", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_DeleteDoctor", parameters);
         }
 
         public DataTable GetDoctorsForAutoComplete(string searchText)
@@ -488,9 +498,12 @@ namespace IM_Mini_Project
                 { "p_doctor_id", doctorId },
                 { "p_appointment_date", date },
                 { "p_appointment_time", time },
-                { "p_appointment_status", status }
+                { "p_appointment_status", status },
+                { "p_appointment_id", MySqlDbType.Int32 },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_AddAppointment", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_AddAppointment", parameters);
         }
 
         public int UpdateAppointment(string appointmentId, string patientId, string doctorId, DateTime date, TimeSpan time, string status)
@@ -502,18 +515,22 @@ namespace IM_Mini_Project
                 { "p_doctor_id", doctorId },
                 { "p_appointment_date", date },
                 { "p_appointment_time", time },
-                { "p_appointment_status", status }
+                { "p_appointment_status", status },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_UpdateAppointment", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_UpdateAppointment", parameters);
         }
 
         public int DeleteAppointment(string appointmentId)
         {
             var parameters = new Dictionary<string, object>
             {
-                { "p_appointment_id", appointmentId }
+                { "p_appointment_id", appointmentId },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_DeleteAppointment", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_DeleteAppointment", parameters);
         }
 
         public bool IsDoctorAvailable(string doctorId, DateTime date, TimeSpan time, string excludeAppointmentId = null)
@@ -523,10 +540,16 @@ namespace IM_Mini_Project
                 { "p_doctor_id", doctorId },
                 { "p_appointment_date", date },
                 { "p_appointment_time", time },
-                { "p_exclude_appointment_id", excludeAppointmentId ?? "" }
+                { "p_exclude_appointment_id", excludeAppointmentId ?? "" },
+                { "p_is_available", MySqlDbType.Int32 }
             };
-            var result = ExecuteScalarProcedure("sp_IsDoctorAvailable", parameters);
-            return result != null && Convert.ToInt32(result) == 1;
+            ExecuteStoredProcedureWithOutput("sp_IsDoctorAvailable", parameters);
+
+            if (parameters.ContainsKey("p_is_available"))
+            {
+                return Convert.ToInt32(parameters["p_is_available"]) == 1;
+            }
+            return false;
         }
 
 
@@ -559,9 +582,12 @@ namespace IM_Mini_Project
                 { "p_insurance_coverage", insuranceCoverage },
                 { "p_patient_balance", patientBalance },
                 { "p_payment_status", paymentStatus },
-                { "p_payment_method", paymentMethod ?? "" }
+                { "p_payment_method", paymentMethod ?? "" },
+                { "p_billing_id", MySqlDbType.Int32 },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_AddBilling", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_AddBilling", parameters);
         }
 
         public int UpdateBilling(string billingId, object insuranceId, decimal totalAmount, decimal insuranceCoverage, decimal patientBalance, string paymentStatus, string paymentMethod)
@@ -574,18 +600,22 @@ namespace IM_Mini_Project
                 { "p_insurance_coverage", insuranceCoverage },
                 { "p_patient_balance", patientBalance },
                 { "p_payment_status", paymentStatus },
-                { "p_payment_method", paymentMethod ?? "" }
+                { "p_payment_method", paymentMethod ?? "" },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_UpdateBilling", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_UpdateBilling", parameters);
         }
 
         public int DeleteBilling(string billingId)
         {
             var parameters = new Dictionary<string, object>
             {
-                { "p_billing_id", billingId }
+                { "p_billing_id", billingId },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_DeleteBilling", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_DeleteBilling", parameters);
         }
 
 
@@ -625,9 +655,12 @@ namespace IM_Mini_Project
                 { "p_diagnosis", diagnosis },
                 { "p_treatment", treatment ?? "" },
                 { "p_prescription", prescription ?? "" },
-                { "p_date_recorded", dateRecorded }
+                { "p_date_recorded", dateRecorded },
+                { "p_record_id", MySqlDbType.Int32 },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_AddMedicalRecord", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_AddMedicalRecord", parameters);
         }
 
         public int UpdateMedicalRecord(string recordId, string patientId, string doctorId, string diagnosis, string treatment, string prescription, DateTime dateRecorded)
@@ -640,18 +673,22 @@ namespace IM_Mini_Project
                 { "p_diagnosis", diagnosis },
                 { "p_treatment", treatment ?? "" },
                 { "p_prescription", prescription ?? "" },
-                { "p_date_recorded", dateRecorded }
+                { "p_date_recorded", dateRecorded },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_UpdateMedicalRecord", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_UpdateMedicalRecord", parameters);
         }
 
         public int DeleteMedicalRecord(string recordId)
         {
             var parameters = new Dictionary<string, object>
             {
-                { "p_record_id", recordId }
+                { "p_record_id", recordId },
+                { "p_result_code", MySqlDbType.Int32 },
+                { "p_result_message", MySqlDbType.VarChar }
             };
-            return ExecuteStoredProcedure("sp_DeleteMedicalRecord", parameters);
+            return ExecuteStoredProcedureWithOutput("sp_DeleteMedicalRecord", parameters);
         }
     }
 }
